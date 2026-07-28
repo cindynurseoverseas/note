@@ -67,7 +67,7 @@
   #noteOut{width:100%; min-height:300px; margin-top:12px; font-family:"Courier New",ui-monospace,monospace; font-size:0.87rem; white-space:pre-wrap; background:#FBFCFC;}
   .hint{font-size:0.76rem; color:var(--ink-soft); margin:2px 0 10px;}
   .smallnote{font-size:0.72rem; color:#8AA39D; margin-top:-4px; margin-bottom:8px;}
-  .photoBanner{width:100%; aspect-ratio:3/1; border-radius:var(--radius); overflow:hidden; margin-bottom:16px; position:relative; cursor:pointer; background:var(--surface-alt); box-shadow:0 4px 16px rgba(0,0,0,0.12);}
+  .photoBanner{width:100%; aspect-ratio:2/1; border-radius:var(--radius); overflow:hidden; margin-bottom:16px; position:relative; cursor:pointer; background:var(--surface-alt); box-shadow:0 4px 16px rgba(0,0,0,0.12);}
   .photoBanner img{width:100%; height:100%; object-fit:cover; display:block; transition:transform 6s ease;}
   .photoBanner:hover img{transform:scale(1.03);}
   .photoShuffleBtn{position:absolute; bottom:10px; right:14px; background:rgba(255,255,255,0.88); color:var(--primary); border:none; padding:7px 16px; border-radius:20px; font-size:0.78rem; font-weight:700; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,0.22); transition:background .15s ease, transform .15s ease; z-index:2;}
@@ -571,6 +571,19 @@
     </div>
   </div>
 
+  <!-- FLUID BALANCE -->
+  <div class="card">
+    <h2>Fluid Balance &amp; Daily Record <span class="tag">optional \u2014 typically completed at night</span></h2>
+    <div class="opt"><input type="checkbox" id="FB_chk" onchange="toggleShow('FB_chk','FB_reveal')"><label>Document 24hr fluid balance this shift</label></div>
+    <div class="reveal" id="FB_reveal">
+      <div id="FB_entriesContainer"></div>
+      <div>
+        <button type="button" class="reword" style="padding:6px 12px; font-size:0.78rem;" onclick="addFbEntry()">+ Add another fluid balance entry</button>
+        <button type="button" id="FB_entryRemoveBtn" class="reword" style="padding:6px 12px; font-size:0.78rem; display:none;" onclick="removeFbEntry()">\u2212 Remove last entry</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ADDITIONAL NOTES -->
   <div class="card">
     <h2>Additional Notes <span class="tag">optional</span></h2>
@@ -1030,6 +1043,121 @@ function updateGCSTotal(){
   document.getElementById('v_gcs').value = total;
   document.getElementById('v_evm').value = `E${e} V${v} M${m}`;
 }
+let fbEntryCount = 1;
+let fbExtraIntake = {};
+let fbExtraOutput = {};
+function addFbExtraIntake(i){ fbExtraIntake[i] = (fbExtraIntake[i]||0)+1; renderFbEntries(); }
+function removeFbExtraIntake(i){ if((fbExtraIntake[i]||0)>0){ fbExtraIntake[i]--; renderFbEntries(); } }
+function addFbExtraOutput(i){ fbExtraOutput[i] = (fbExtraOutput[i]||0)+1; renderFbEntries(); }
+function removeFbExtraOutput(i){ if((fbExtraOutput[i]||0)>0){ fbExtraOutput[i]--; renderFbEntries(); } }
+function addFbEntry(){ fbEntryCount++; renderFbEntries(); }
+function removeFbEntry(){ if(fbEntryCount>1){ delete fbExtraIntake[fbEntryCount]; delete fbExtraOutput[fbEntryCount]; fbEntryCount--; renderFbEntries(); } }
+function updateFbEntry(i){
+  const oral = parseFloat(getVal('FB_in_oral_'+i))||0;
+  const ivi = parseFloat(getVal('FB_in_ivi_'+i))||0;
+  const ivmeds = parseFloat(getVal('FB_in_ivmeds_'+i))||0;
+  const block = parseFloat(getVal('FB_in_block_'+i))||0;
+  let totalIn = oral+ivi+ivmeds+block;
+  const extraInCount = fbExtraIntake[i]||0;
+  for(let j=1;j<=extraInCount;j++){ totalIn += parseFloat(getVal('FB_extra_in_val_'+i+'_'+j))||0; }
+
+  const urineOut = parseFloat(getVal('FB_out_urine_'+i))||0;
+  const ngOut = parseFloat(getVal('FB_out_ng_'+i))||0;
+  const drainOut = parseFloat(getVal('FB_out_drain_'+i))||0;
+  const otherOut = parseFloat(getVal('FB_out_other_'+i))||0;
+  let totalOut = urineOut+ngOut+drainOut+otherOut;
+  const extraOutCount = fbExtraOutput[i]||0;
+  for(let j=1;j<=extraOutCount;j++){ totalOut += parseFloat(getVal('FB_extra_out_val_'+i+'_'+j))||0; }
+
+  const balance = totalIn - totalOut;
+  const summaryEl = document.getElementById('FB_summary_'+i);
+  if(summaryEl) summaryEl.textContent = `Total intake: ${totalIn}ml \u00b7 Total output: ${totalOut}ml \u00b7 Balance: ${balance>=0?'+':''}${balance}ml`;
+
+  const weight = parseFloat(getVal('FB_weight_'+i));
+  const hours = parseFloat(getVal('FB_hours_'+i));
+  const adequacyEl = document.getElementById('FB_urineAdequacy_'+i);
+  if(adequacyEl){
+    if(weight && hours && urineOut){
+      const perKgPerHour = urineOut / weight / hours;
+      const minRequired = weight * 0.5 * hours;
+      if(perKgPerHour < 0.5){
+        adequacyEl.textContent = `Urine output ${perKgPerHour.toFixed(2)}ml/kg/hr \u2014 below the 0.5ml/kg/hr threshold (needs \u2265${minRequired.toFixed(0)}ml over ${hours}hr for this weight). Surgical SHO informed, fluid status reviewed.`;
+        adequacyEl.style.color = 'var(--danger)';
+      } else {
+        adequacyEl.textContent = `Urine output ${perKgPerHour.toFixed(2)}ml/kg/hr \u2014 adequate (\u22650.5ml/kg/hr).`;
+        adequacyEl.style.color = '';
+      }
+    } else {
+      adequacyEl.textContent = '';
+    }
+  }
+}
+function renderFbEntries(){
+  const container = document.getElementById('FB_entriesContainer');
+  const saved = {};
+  container.querySelectorAll('input').forEach(el=>{ saved[el.id] = el.value; });
+  let html = '';
+  for(let i=1;i<=fbEntryCount;i++){
+    const extraInCount = fbExtraIntake[i]||0;
+    let extraInHtml = '';
+    for(let j=1;j<=extraInCount;j++){
+      extraInHtml += `<div class="row2">
+        <input type="text" id="FB_extra_in_label_${i}_${j}" placeholder="e.g. NJ feeding, TPN, PO potassium">
+        <input type="number" id="FB_extra_in_val_${i}_${j}" oninput="updateFbEntry(${i})" placeholder="ml">
+      </div>`;
+    }
+    const extraOutCount = fbExtraOutput[i]||0;
+    let extraOutHtml = '';
+    for(let j=1;j<=extraOutCount;j++){
+      extraOutHtml += `<div class="row2">
+        <input type="text" id="FB_extra_out_label_${i}_${j}" placeholder="e.g. stoma output, vomit, wound ooze">
+        <input type="number" id="FB_extra_out_val_${i}_${j}" oninput="updateFbEntry(${i})" placeholder="ml">
+      </div>`;
+    }
+    const removeInBtn = extraInCount>0 ? `<button type="button" class="reword" style="padding:5px 10px; font-size:0.74rem;" onclick="removeFbExtraIntake(${i})">\u2212 Remove last intake type</button>` : '';
+    const removeOutBtn = extraOutCount>0 ? `<button type="button" class="reword" style="padding:5px 10px; font-size:0.74rem;" onclick="removeFbExtraOutput(${i})">\u2212 Remove last output type</button>` : '';
+    html += `<div class="devicecard card" style="margin-bottom:10px;">
+      ${fbEntryCount>1 ? `<label class="field">Period/label (optional)</label><input type="text" id="FB_label_${i}" placeholder="e.g. 08:00-20:00 or Day shift" style="margin-bottom:8px;">` : ''}
+      <div class="hint">Intake (ml)</div>
+      <div class="row">
+        <div><label class="field">Oral</label><input type="number" id="FB_in_oral_${i}" oninput="updateFbEntry(${i})" placeholder="0"></div>
+        <div><label class="field">IVI</label><input type="number" id="FB_in_ivi_${i}" oninput="updateFbEntry(${i})" placeholder="0"></div>
+        <div><label class="field">IV meds</label><input type="number" id="FB_in_ivmeds_${i}" oninput="updateFbEntry(${i})" placeholder="0"></div>
+        <div><label class="field">Nerve block/Epidural</label><input type="number" id="FB_in_block_${i}" oninput="updateFbEntry(${i})" placeholder="0"></div>
+      </div>
+      ${extraInHtml}
+      <div style="margin-bottom:8px;">
+        <button type="button" class="reword" style="padding:5px 10px; font-size:0.74rem;" onclick="addFbExtraIntake(${i})">+ Add intake type (e.g. NJ feeding, TPN)</button>
+        ${removeInBtn}
+      </div>
+      <div class="hint">Output (ml)</div>
+      <div class="row">
+        <div><label class="field">Catheter/urine</label><input type="number" id="FB_out_urine_${i}" oninput="updateFbEntry(${i})" placeholder="0"></div>
+        <div><label class="field">NG free drainage</label><input type="number" id="FB_out_ng_${i}" oninput="updateFbEntry(${i})" placeholder="0"></div>
+        <div><label class="field">Drain</label><input type="number" id="FB_out_drain_${i}" oninput="updateFbEntry(${i})" placeholder="0"></div>
+        <div><label class="field">Other</label><input type="number" id="FB_out_other_${i}" oninput="updateFbEntry(${i})" placeholder="0"></div>
+      </div>
+      ${extraOutHtml}
+      <div style="margin-bottom:8px;">
+        <button type="button" class="reword" style="padding:5px 10px; font-size:0.74rem;" onclick="addFbExtraOutput(${i})">+ Add output type (e.g. stoma, vomit)</button>
+        ${removeOutBtn}
+      </div>
+      <div class="hint" id="FB_summary_${i}" style="font-weight:700; color:var(--primary);"></div>
+      <div class="hint" style="margin-top:8px;">Urine output adequacy (needs body weight \u2014 threshold 0.5ml/kg/hr)</div>
+      <div class="row">
+        <div><label class="field">Body weight (kg)</label><input type="number" id="FB_weight_${i}" oninput="updateFbEntry(${i})" placeholder="e.g. 70"></div>
+        <div><label class="field">Hours covered</label><input type="number" id="FB_hours_${i}" oninput="updateFbEntry(${i})" placeholder="e.g. 12"></div>
+      </div>
+      <div class="hint" id="FB_urineAdequacy_${i}" style="font-weight:600;"></div>
+    </div>`;
+  }
+  container.innerHTML = html;
+  container.querySelectorAll('input').forEach(el=>{ if(saved.hasOwnProperty(el.id)) el.value = saved[el.id]; });
+  for(let i=1;i<=fbEntryCount;i++) updateFbEntry(i);
+  const removeBtn = document.getElementById('FB_entryRemoveBtn');
+  if(removeBtn) removeBtn.style.display = fbEntryCount>1 ? 'inline-block' : 'none';
+}
+renderFbEntries();
 function renderPainCheck(){
   const level = getVal('v_pain');
   const panel = document.getElementById('painMgmtPanel');
@@ -1448,16 +1576,47 @@ const DEVICE_TEMPLATES = {
     title:'Chest drain',
     fields:[
       {id:'cd_site', label:'Side', type:'select', options:['left','right']},
-      {id:'cd_swing', label:'Swing', type:'select', options:['Swinging','Not swinging']},
+      {id:'cd_comfort', label:'Patient comfort (0-10, 10=severe)', type:'number'},
+      {id:'cd_swing', label:'Swinging', type:'select', options:['Yes','No']},
       {id:'cd_bubbling', label:'Bubbling', type:'select', options:['No','Yes']},
-      {id:'cd_volume', label:'Output volume', type:'text', placeholder:'e.g. 50ml this shift'},
-      {id:'cd_drainage_type', label:'Draining', type:'select_other', options:['Serous','Serosanguinous','Sanguinous (frank blood)','Purulent','Chylous']},
+      {id:'cd_drainage_type', label:'Fluid appearance', type:'select_other', options:['Serous (S)','Serosanguinous (SS)','Haemoserous (HS)','Sanguinous/frank blood (B)','Purulent (P)','Chylous (CH)']},
+      {id:'cd_site_ok', label:'Drain site satisfactory?', type:'select', options:['Yes','No']},
+      {id:'cd_emphysema', label:'Surgical emphysema present?', type:'select', options:['No','Yes']},
+      {id:'cd_tubing_ok', label:'Tubing connections intact?', type:'select', options:['Yes','No']},
+      {id:'cd_uws_ok', label:'Underwater seal intact?', type:'select', options:['Yes','No']},
+      {id:'cd_bottle_changed', label:'Bottle changed?', type:'select', options:['No','Yes']},
+      {id:'cd_suction', label:'Prescribed suction (kPa, or NA)', type:'text', placeholder:'e.g. NA or 2kPa'},
+      {id:'cd_flush', label:'Saline flush since last check (ml)', type:'text', placeholder:'e.g. NA or 10'},
+      {id:'cd_volume', label:'Volume drained since last check (ml)', type:'text', placeholder:'e.g. 0'},
+      {id:'cd_cumulative', label:'Cumulative total drained (ml)', type:'text', placeholder:'e.g. 1620'},
     ],
-    build:(f)=>{ const side=f.cd_site||'[side]', swing=f.cd_swing||'Swinging', bubble=f.cd_bubbling||'No', vol=f.cd_volume||'[volume]', dtype=f.cd_drainage_type||'[drainage type]';
-      return pick([
-        `Chest drain in situ (${side}), ${swing.toLowerCase()}, ${bubble==='Yes'?'bubbling noted':'no bubbling'}. Draining ${dtype.toLowerCase()} fluid, ${vol}. Drain secure, dressing intact, no surgical emphysema noted.`,
-        `Chest drain (${side}) remains in situ, ${swing.toLowerCase()}, ${bubble==='Yes'?'bubbling present':'not bubbling'}. Output ${dtype.toLowerCase()}, ${vol}. Site secure, no crepitus/surgical emphysema.`
-      ]); }
+    build:(f)=>{
+      const side=f.cd_site||'[side]', comfort=f.cd_comfort, swing=f.cd_swing||'Yes', bubble=f.cd_bubbling||'No', dtype=f.cd_drainage_type||'[fluid appearance]';
+      const siteOk=f.cd_site_ok||'Yes', emphysema=f.cd_emphysema||'No', tubingOk=f.cd_tubing_ok||'Yes', uwsOk=f.cd_uws_ok||'Yes', bottleChanged=f.cd_bottle_changed;
+      const suction=f.cd_suction, flush=f.cd_flush, vol=f.cd_volume, cumulative=f.cd_cumulative;
+
+      let base = pick([
+        `Chest drain in situ (${side}), ${swing==='Yes'?'swinging':'not swinging'}, ${bubble==='Yes'?'bubbling noted':'no bubbling'}. Fluid appearance: ${dtype.toLowerCase()}.`,
+        `Chest drain (${side}) remains in situ, ${swing==='Yes'?'swinging':'not swinging'}, ${bubble==='Yes'?'bubbling present':'not bubbling'}. Draining ${dtype.toLowerCase()} fluid.`
+      ]);
+      if(comfort!=='' && comfort!==undefined) base += ` Patient comfort ${comfort}/10.`;
+
+      const volParts = [];
+      const isNum = (v)=> v!=='' && !isNaN(parseFloat(v)) && /^-?\d/.test(v.trim());
+      if(flush) volParts.push(`saline flush ${flush}${isNum(flush)?'ml':''}`);
+      if(vol) volParts.push(`drained ${vol}${isNum(vol)?'ml':''} since last check`);
+      if(cumulative) volParts.push(`cumulative total ${cumulative}${isNum(cumulative)?'ml':''}`);
+      if(suction) volParts.push(`suction ${suction}`);
+      if(volParts.length) base += ` ${capitalize(volParts.join(', '))}.`;
+
+      base += siteOk==='No' ? ' Drain site NOT satisfactory \u2014 surgical SHO informed.' : ' Drain site satisfactory.';
+      base += tubingOk==='No' ? ' Tubing connections NOT intact \u2014 surgical SHO informed urgently, drain system checked.' : ' Tubing connections intact.';
+      base += uwsOk==='No' ? ' Underwater seal NOT intact \u2014 surgical SHO informed urgently, patient closely monitored for pneumothorax.' : ' Underwater seal intact.';
+      if(emphysema==='Yes') base += ' Surgical emphysema present \u2014 surgical SHO informed urgently, extent marked and monitored.';
+      else base += ' No surgical emphysema.';
+      if(bottleChanged==='Yes') base += ' Bottle changed this shift.';
+      return base;
+    }
   },
   artline: {
     title:'Arterial line',
@@ -2361,6 +2520,62 @@ function buildNoteText(){
       else if(t){ lines.push(t); }
     });
     lines.push('');
+  }
+
+  if(document.getElementById('FB_chk').checked){
+    const fbLines = [];
+    for(let i=1;i<=fbEntryCount;i++){
+      const oral = getVal('FB_in_oral_'+i), ivi = getVal('FB_in_ivi_'+i), ivmeds = getVal('FB_in_ivmeds_'+i), block = getVal('FB_in_block_'+i);
+      const urineOut = getVal('FB_out_urine_'+i), ngOut = getVal('FB_out_ng_'+i), drainOut = getVal('FB_out_drain_'+i), otherOut = getVal('FB_out_other_'+i);
+      const weight = getVal('FB_weight_'+i), hours = getVal('FB_hours_'+i);
+      const label = getVal('FB_label_'+i);
+
+      const inParts = [];
+      if(oral) inParts.push(`oral ${oral}ml`);
+      if(ivi) inParts.push(`IVI ${ivi}ml`);
+      if(ivmeds) inParts.push(`IV meds ${ivmeds}ml`);
+      if(block) inParts.push(`nerve block/epidural ${block}ml`);
+      let totalIn = (parseFloat(oral)||0)+(parseFloat(ivi)||0)+(parseFloat(ivmeds)||0)+(parseFloat(block)||0);
+      const extraInCount = fbExtraIntake[i]||0;
+      for(let j=1;j<=extraInCount;j++){
+        const lbl = getVal('FB_extra_in_label_'+i+'_'+j), val = getVal('FB_extra_in_val_'+i+'_'+j);
+        if(val){ inParts.push(`${lbl||'other intake'} ${val}ml`); totalIn += parseFloat(val)||0; }
+      }
+
+      const outParts = [];
+      if(urineOut) outParts.push(`catheter/urine ${urineOut}ml`);
+      if(ngOut) outParts.push(`NG free drainage ${ngOut}ml`);
+      if(drainOut) outParts.push(`drain ${drainOut}ml`);
+      if(otherOut) outParts.push(`other ${otherOut}ml`);
+      let totalOut = (parseFloat(urineOut)||0)+(parseFloat(ngOut)||0)+(parseFloat(drainOut)||0)+(parseFloat(otherOut)||0);
+      const extraOutCount = fbExtraOutput[i]||0;
+      for(let j=1;j<=extraOutCount;j++){
+        const lbl = getVal('FB_extra_out_label_'+i+'_'+j), val = getVal('FB_extra_out_val_'+i+'_'+j);
+        if(val){ outParts.push(`${lbl||'other output'} ${val}ml`); totalOut += parseFloat(val)||0; }
+      }
+      const balance = totalIn - totalOut;
+
+      if(!inParts.length && !outParts.length) continue;
+      const prefix = fbEntryCount>1 ? `${label || ('Entry '+i)} \u2014 ` : '';
+
+      if(inParts.length) fbLines.push(`${prefix}Intake: ${inParts.join(', ')} (total ${totalIn}ml).`);
+      if(outParts.length) fbLines.push(`Output: ${outParts.join(', ')} (total ${totalOut}ml).`);
+      fbLines.push(`Balance: ${balance>=0?'+':''}${balance}ml.`);
+
+      if(weight && hours && urineOut){
+        const perKgPerHour = parseFloat(urineOut) / parseFloat(weight) / parseFloat(hours);
+        if(perKgPerHour < 0.5){
+          fbLines.push(`Urine output ${perKgPerHour.toFixed(2)}ml/kg/hr \u2014 below the 0.5ml/kg/hr threshold for this body weight; surgical SHO informed, fluid status reviewed.`);
+        } else {
+          fbLines.push(`Urine output ${perKgPerHour.toFixed(2)}ml/kg/hr, adequate for body weight.`);
+        }
+      }
+    }
+    if(fbLines.length){
+      lines.push('Fluid balance & daily record:');
+      fbLines.forEach(l=>lines.push(l));
+      lines.push('');
+    }
   }
 
   const stItems = [
