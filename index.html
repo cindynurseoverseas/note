@@ -35,6 +35,7 @@
   .row{display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; margin-bottom:10px;}
   .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;}
   .reveal{display:none; margin-top:6px;}
+  #sepsisSixPanel{border:2px solid var(--danger); background:#FDF1EE; border-radius:var(--radius); padding:12px; margin-top:10px; margin-bottom:10px;}
   .reveal.show{display:block;}
   .monitor{background:var(--monitor-bg); border-radius:var(--radius); padding:14px 16px; margin-bottom:6px; display:grid; grid-template-columns:repeat(auto-fit,minmax(100px,1fr)); gap:12px;}
   .monitor .vital{display:flex; flex-direction:column; gap:3px;}
@@ -249,7 +250,7 @@
     </div>
 
     <div class="reveal" id="sepsisSixPanel">
-      <div class="hint" style="color:var(--danger); font-weight:700;">NEWS2/observations suggest possible deterioration \u2014 consider Sepsis Six (3 in / 3 out):</div>
+      <div style="color:var(--danger); font-weight:800; font-size:0.85rem; letter-spacing:0.03em; text-transform:uppercase; margin-bottom:8px;">\u26a0 NEWS2/observations suggest possible deterioration or query sepsis \u2014 Sepsis Six (3 in / 3 out)</div>
       <div class="row2">
         <div>
           <div style="font-size:0.72rem; font-weight:700; color:var(--primary); margin-bottom:4px;">3 IN (give)</div>
@@ -473,6 +474,16 @@
             <option value="Other (specify)">Other (specify)</option>
           </select>
           <input type="text" id="urineMethod_other" placeholder="specify..." style="display:none; margin-top:4px;">
+          <div class="reveal show" id="urineNormalMethodReveal">
+            <label class="field">How</label>
+            <select id="urineNormalMethod">
+              <option value="toilet">Toilet</option>
+              <option value="bottle">Urine bottle/urinal</option>
+              <option value="bedpan">Bedpan</option>
+              <option value="commode">Commode</option>
+              <option value="pad">Continence pad/pants</option>
+            </select>
+          </div>
           <div class="reveal" id="urineCatheterReveal">
             <div class="row2">
               <div><label class="field">Catheter type</label><select id="urineCatheterType"><option value="Foley 2-way">Foley 2-way</option><option value="Foley 3-way (irrigation)">Foley 3-way (irrigation)</option></select></div>
@@ -499,7 +510,16 @@
             <option value="opened">Opened bowels this shift/handover</option>
             <option value="notopened">Not opened for X days</option>
             <option value="stoma">Stoma output (see device section)</option>
+            <option value="flexiseal">Flexiseal (faecal management system) in situ</option>
           </select>
+          <div class="reveal" id="bowelFlexisealReveal">
+            <div class="row2">
+              <div><label class="field">Output volume (ml)</label><input type="number" id="bowelFlexisealVol" placeholder="e.g. 300"></div>
+              <div><label class="field">Consistency</label><input type="text" id="bowelFlexisealConsistency" placeholder="e.g. liquid, brown"></div>
+            </div>
+            <label class="field">Perianal skin</label>
+            <select id="bowelFlexisealSkin"><option value="Intact">Intact</option><option value="Broken/excoriated">Broken/excoriated</option></select>
+          </div>
           <div class="reveal" id="bowelOpenedReveal">
             <div class="row2">
               <select id="bowelWhen"><option value="today">today</option><option value="yesterday">yesterday</option></select>
@@ -802,6 +822,7 @@ const DEVICES_PATHWAY = [
   {id:'slidingscale', label:'Sliding scale (VRIII)'},
   {id:'heparin', label:'Heparin infusion'},
   {id:'electrolyte', label:'Electrolyte replacement'},
+  {id:'ciwa', label:'CIWA-Ar (alcohol withdrawal)'},
 ];
 
 const DEVICES_CARDIAC = [
@@ -880,12 +901,39 @@ function toggleBowel(){
   const v = document.getElementById('bowelSel').value;
   document.getElementById('bowelOpenedReveal').classList.toggle('show', v==='opened');
   document.getElementById('bowelNotReveal').classList.toggle('show', v==='notopened');
+  document.getElementById('bowelFlexisealReveal').classList.toggle('show', v==='flexiseal');
   if(v==='opened') toggleBowelBristolPopups();
 }
 function toggleBowelBristolPopups(){
   const t = parseInt(getVal('bowelBristol'));
   document.getElementById('bowelLaxativeReveal').classList.toggle('show', t>=1 && t<=3);
   document.getElementById('bowelStoolSampleReveal').classList.toggle('show', t>=5 && t<=7);
+}
+function toggleRibPainEscalation(){
+  const val = getVal('rib_dynamic_pain');
+  const lowRev = document.getElementById('ribLowPainReveal'), highRev = document.getElementById('ribHighPainReveal');
+  if(!lowRev || !highRev) return;
+  lowRev.classList.toggle('show', val.startsWith('0-1'));
+  highRev.classList.toggle('show', val.startsWith('2-3'));
+}
+function toggleRibReferralSlip(){
+  const val = getVal('rib_step');
+  const rev = document.getElementById('ribReferralSlipReveal');
+  if(rev) rev.classList.toggle('show', val.startsWith('Step 3'));
+}
+function updateCiwaScore(){
+  const ids = ['ciwa_nausea','ciwa_tremor','ciwa_sweats','ciwa_anxiety','ciwa_agitation','ciwa_tactile','ciwa_auditory','ciwa_visual','ciwa_headache','ciwa_orientation'];
+  let total = 0, anyFilled = false;
+  ids.forEach(id=>{ const v = getVal(id); if(v!==''){ anyFilled=true; total += parseFloat(v)||0; } });
+  const el = document.getElementById('ciwa_total_display');
+  if(!el) return;
+  if(!anyFilled){ el.textContent = ''; return; }
+  let risk;
+  if(total<10){ risk='Minimal withdrawal'; el.style.color=''; }
+  else if(total<=15){ risk='Mild-moderate withdrawal'; el.style.color='var(--monitor-amber)'; }
+  else if(total<=20){ risk='Moderate-severe withdrawal \u2014 surgical SHO informed'; el.style.color='var(--danger)'; }
+  else { risk='Severe withdrawal \u2014 high risk of complications; surgical SHO informed urgently'; el.style.color='var(--danger)'; }
+  el.textContent = `CIWA-Ar total: ${total}/67 \u2014 ${risk}`;
 }
 function toggleStomaBristolPopups(){
   const val = getVal('stoma_bristol');
@@ -900,6 +948,8 @@ function toggleUrineCatheterFields(){
   const method = getVal('urineMethod');
   const rev = document.getElementById('urineCatheterReveal');
   if(rev) rev.classList.toggle('show', method==='idc' || method==='spc');
+  const normalRev = document.getElementById('urineNormalMethodReveal');
+  if(normalRev) normalRev.classList.toggle('show', method==='normal');
 }
 toggleBowel();
 
@@ -953,18 +1003,31 @@ function renderNEWS2(){
   breakdownEl.textContent = `RR ${fmtScore(r.sRR)} + ${spo2Label} ${fmtScore(r.sSpO2)} + O2 ${fmtScore(r.sO2)} + BP ${fmtScore(r.sBP)} + HR ${fmtScore(r.sHR)} + Temp ${fmtScore(r.sTemp)} + Conscious ${r.consciousness} = ${r.total}`;
 
   const redFlag = [r.sRR,r.sSpO2,r.sBP,r.sHR,r.sTemp,r.consciousness].some(x=>x===3);
-  const manualSepsis = document.getElementById('sepsisManualChk').checked;
-  const sepsisTrigger = r.total>=5 || redFlag || manualSepsis;
-  document.getElementById('sepsisSixPanel').style.display = sepsisTrigger ? 'block' : 'none';
+  updateSepsisSixVisibility();
   return r;
 }
+function updateSepsisSixVisibility(){
+  const mainR = computeNEWS2();
+  const mainRedFlag = [mainR.sRR,mainR.sSpO2,mainR.sBP,mainR.sHR,mainR.sTemp,mainR.consciousness].some(x=>x===3);
+  let anyAbnormal = mainR.total>=5 || mainRedFlag;
+  if(!anyAbnormal && typeof newsEntryCount !== 'undefined'){
+    for(let i=1;i<=newsEntryCount;i++){
+      const r = computeNEWS2Entry(i);
+      if(r.hasAnyData && r.isAbnormal){ anyAbnormal = true; break; }
+    }
+  }
+  const manualSepsis = document.getElementById('sepsisManualChk').checked;
+  const trigger = anyAbnormal || manualSepsis;
+  document.getElementById('sepsisSixPanel').style.display = trigger ? 'block' : 'none';
+  return trigger;
+}
+let newsEntryCount = 0;
 renderNEWS2();
 
-let newsEntryCount = 0;
 function addNewsEntry(){ newsEntryCount++; renderNewsEntries(); }
 function removeNewsEntry(){ if(newsEntryCount>0){ newsEntryCount--; renderNewsEntries(); } }
 function computeNEWS2Entry(i){
-  const rr=getVal('newsEntry_rr_'+i), spo2=getVal('newsEntry_spo2_'+i), o2dev=getVal('newsEntry_o2dev_'+i)||'room air';
+  const rr=getVal('newsEntry_rr_'+i), spo2=getVal('newsEntry_spo2_'+i), o2dev=getVal('newsEntry_o2dev_'+i)||'room air', flow=getVal('newsEntry_flow_'+i);
   const sys=getVal('newsEntry_bpsys_'+i), dia=getVal('newsEntry_bpdia_'+i), hr=getVal('newsEntry_hr_'+i), temp=getVal('newsEntry_temp_'+i);
   const onOxygen = o2dev !== 'room air';
   const confusionEl = document.getElementById('newsEntry_confusion_'+i);
@@ -978,12 +1041,14 @@ function computeNEWS2Entry(i){
   const anyThree = parts.some(x=>x===3);
   let risk;
   if(total>=7) risk='High'; else if(anyThree) risk='Low\u2013Medium (red score)'; else if(total>=5) risk='Medium'; else risk='Low';
-  return {total, risk, missing, hasAnyData, sRR,sSpO2,sBP,sHR,sTemp, consciousness, rr,spo2,o2dev,sys,dia,hr,temp,confusion};
+  const isAbnormal = total>=5 || anyThree;
+  return {total, risk, missing, hasAnyData, anyThree, isAbnormal, sRR,sSpO2,sBP,sHR,sTemp, consciousness, rr,spo2,o2dev,flow,sys,dia,hr,temp,confusion};
 }
 function updateNewsEntryScore(i){
   const r = computeNEWS2Entry(i);
   const el = document.getElementById('newsEntry_result_'+i);
   if(el) el.textContent = r.hasAnyData ? `NEWS2: ${r.total}${r.missing?'*':''} (${r.risk})` : '';
+  if(typeof updateSepsisSixVisibility === 'function') updateSepsisSixVisibility();
 }
 function renderNewsEntries(){
   const container = document.getElementById('newsEntriesContainer');
@@ -1003,6 +1068,7 @@ function renderNewsEntries(){
           <option value="hfnc">HFNC</option>
           <option value="venturi">Venturi mask</option>
         </select></div>
+        <div><label class="field">Flow L/min</label><input type="number" id="newsEntry_flow_${i}" placeholder="e.g. 2"></div>
         <div><label class="field">HR bpm</label><input type="number" id="newsEntry_hr_${i}" oninput="updateNewsEntryScore(${i})"></div>
         <div><label class="field">BP systolic</label><input type="number" id="newsEntry_bpsys_${i}" oninput="updateNewsEntryScore(${i})"></div>
         <div><label class="field">BP diastolic</label><input type="number" id="newsEntry_bpdia_${i}"></div>
@@ -1293,6 +1359,91 @@ function varyTemp(temp){
   const dir = v<36.1 ? 'hypothermic':'pyrexial';
   return pick([`Temperature ${temp}\u00b0C, ${dir}; surgical team aware, monitored closely.`, `Temp ${temp}\u00b0C (${dir}); noted and escalated as appropriate.`]);
 }
+
+function getAllNewsReadings(){
+  const mRR=getVal('v_rr'), mSpO2=getVal('v_spo2'), mO2dev=getVal('v_o2device'), mFlow=getVal('v_flow');
+  const mHR=getVal('v_hr'), mSys=getVal('v_bp_sys'), mDia=getVal('v_bp_dia'), mTemp=getVal('v_temp');
+  const mOnOxygen = mO2dev !== 'room air', mScale2 = document.getElementById('spo2Scale2Chk').checked;
+  const mConfusion = document.getElementById('D_other_chk').checked;
+  const mSRR=scoreRR(mRR), mSSpO2=scoreSpO2(mSpO2,mOnOxygen,mScale2), mSO2=scoreO2device(mOnOxygen), mSBP=scoreBP(mSys), mSHR=scoreHR(mHR), mSTemp=scoreTemp(mTemp);
+  const mConsciousness = mConfusion ? 3 : 0;
+  const mParts = [mSRR,mSSpO2,mSO2,mSBP,mSHR,mSTemp,mConsciousness];
+  const mMissing = [mSRR,mSSpO2,mSBP,mSHR,mSTemp].some(x=>x===null);
+  const mTotal = mParts.reduce((a,b)=>a+(b||0),0);
+  const mIsAbnormal = mTotal>=5 || mParts.some(x=>x===3);
+  const list = [{
+    time: null, isMain: true,
+    rr:mRR, spo2:mSpO2, o2dev:mO2dev, flow:mFlow, hr:mHR, sys:mSys, dia:mDia, temp:mTemp, confusion:mConfusion, scale2:mScale2,
+    sRR:mSRR, sSpO2:mSSpO2, sBP:mSBP, sHR:mSHR, sTemp:mSTemp,
+    total:mTotal, missing:mMissing, isAbnormal:mIsAbnormal,
+    hasAnyData: mRR!=='' || mSpO2!=='' || mSys!=='' || mHR!=='' || mTemp!==''
+  }];
+  for(let i=1;i<=newsEntryCount;i++){
+    const r = computeNEWS2Entry(i);
+    const time = getVal('newsEntry_time_'+i);
+    const note = getVal('newsEntry_note_'+i);
+    if(!time && !r.hasAnyData && !note) continue;
+    list.push({
+      time: time||null, isMain:false, entryIndex:i, note,
+      rr:r.rr, spo2:r.spo2, o2dev:r.o2dev, flow:r.flow, hr:r.hr, sys:r.sys, dia:r.dia, temp:r.temp, confusion:r.confusion, scale2:false,
+      sRR:r.sRR, sSpO2:r.sSpO2, sBP:r.sBP, sHR:r.sHR, sTemp:r.sTemp, hasAnyData:r.hasAnyData, isAbnormal:r.isAbnormal, total:r.total, missing:r.missing
+    });
+  }
+  return list;
+}
+function combineRR(readings){
+  const vals = readings.filter(r=>r.rr!=='');
+  if(vals.length===0) return varyRR('');
+  if(vals.length===1) return varyRR(vals[0].rr);
+  const nums = vals.map(r=>parseFloat(r.rr));
+  const mn=Math.min(...nums), mx=Math.max(...nums);
+  return mn===mx ? `Respiratory rate ${mn} breaths/min throughout.` : `Respiratory rate ${mn}-${mx} breaths/min across readings this shift.`;
+}
+function combineSpO2All(readings){
+  const vals = readings.filter(r=>r.spo2!=='');
+  if(vals.length===0) return varySpO2('','room air','',false,false);
+  if(vals.length===1){ const r=vals[0]; return varySpO2(r.spo2, r.o2dev, r.flow, r.o2dev!=='room air', r.scale2); }
+  const nums = vals.map(r=>parseFloat(r.spo2));
+  const mn=Math.min(...nums), mx=Math.max(...nums);
+  const devices = [...new Set(vals.map(r=>r.o2dev))];
+  let deviceTxt;
+  if(devices.length===1){
+    const dev = devices[0];
+    if(dev==='room air'){ deviceTxt = ' on room air'; }
+    else {
+      const flows = vals.filter(r=>r.flow).map(r=>parseFloat(r.flow));
+      deviceTxt = flows.length ? ` on ${dev} ${Math.min(...flows)===Math.max(...flows)?Math.min(...flows):Math.min(...flows)+'-'+Math.max(...flows)}L/min` : ` on ${dev}`;
+    }
+  } else {
+    deviceTxt = ` on varying oxygen requirements (${devices.join('/')})`;
+  }
+  return mn===mx ? `Oxygen saturation ${mn}%${deviceTxt} throughout.` : `Oxygen saturation ${mn}-${mx}%${deviceTxt} across readings this shift.`;
+}
+function combineHR(readings){
+  const vals = readings.filter(r=>r.hr!=='');
+  if(vals.length===0) return varyHR('');
+  if(vals.length===1) return varyHR(vals[0].hr);
+  const nums = vals.map(r=>parseFloat(r.hr));
+  const mn=Math.min(...nums), mx=Math.max(...nums);
+  return mn===mx ? `Heart rate ${mn} bpm throughout.` : `Heart rate ${mn}-${mx} bpm across readings this shift.`;
+}
+function combineBPAll(readings){
+  const vals = readings.filter(r=>r.sys!=='');
+  if(vals.length===0) return varyBP('','');
+  if(vals.length===1) return varyBP(vals[0].sys, vals[0].dia);
+  const sorted = [...vals].sort((a,b)=>parseFloat(a.sys)-parseFloat(b.sys));
+  const low=sorted[0], high=sorted[sorted.length-1];
+  const lowTxt = `${low.sys}/${low.dia||'[X]'}`, highTxt = `${high.sys}/${high.dia||'[X]'}`;
+  return lowTxt===highTxt ? `Blood pressure ${lowTxt} mmHg throughout.` : `Blood pressure ${lowTxt}-${highTxt} mmHg across readings this shift.`;
+}
+function combineTempAll(readings){
+  const vals = readings.filter(r=>r.temp!=='');
+  if(vals.length===0) return varyTemp('');
+  if(vals.length===1) return varyTemp(vals[0].temp);
+  const nums = vals.map(r=>parseFloat(r.temp));
+  const mn=Math.min(...nums), mx=Math.max(...nums);
+  return mn===mx ? `Temperature ${mn}\u00b0C throughout.` : `Temperature ${mn}-${mx}\u00b0C across readings this shift.`;
+}
 function varyGCS2(gcs, evm){
   const total = parseInt(gcs);
   if(isNaN(total) || total>=15) return pick([`Alert and orientated, GCS ${gcs||'15'}/15 (${evm||'E4 V5 M6'}).`, `GCS ${gcs||'15'}/15 (${evm||'E4 V5 M6'}), alert and orientated.`]);
@@ -1537,24 +1688,96 @@ const DEVICE_TEMPLATES = {
   ribpathway: {
     title:'Rib fracture pathway',
     gasPrefix:'rib',
+    ribPathway: true,
     fields:[
       {id:'rib_count', label:'Number of fractures', type:'text', placeholder:'e.g. 3 (ribs 5-7, right)'},
-      {id:'rib_analgesia', label:'Analgesia method', type:'select_other', options:['Epidural','PCA','Nerve block','Rectus Sheath Catheter (RSC)','Oral analgesia (paracetamol/NSAID/opioid)']},
-      {id:'rib_sitout', label:'Time sat out / mobilised', type:'text', placeholder:'e.g. 2 hours in chair, mobilised to bathroom'},
+      {id:'rib_step', label:'Pathway step', type:'select', options:['Step 1 \u2014 Regular Paracetamol 1g QDS + Codeine 60mg QDS \u00b1 regular NSAID','Step 2 \u2014 Step 1 + PRN oral morphine liquid 10-20mg 2-4hrly','Step 3 \u2014 Escalated to Acute Pain Team (PCA/regional block/RSC)']},
+      {id:'rib_step3_method', label:'Step 3 method (if applicable)', type:'select_other', options:['PCA','Epidural','Rectus Sheath Catheter (RSC)','Nerve block']},
+      {id:'rib_dynamic_pain', label:'Dynamic pain score (pain on movement/cough)', type:'select', options:['0-1 \u2014 No/mild pain','2-3 \u2014 Moderate/severe pain']},
       ...abgFields('rib'),
+      {id:'rib_sitout', label:'Time sat out / mobilised', type:'text', placeholder:'e.g. 2 hours in chair, mobilised to bathroom'},
+      {id:'rib_next_reassess', label:'Next pain reassessment due', type:'text', placeholder:'e.g. 60 minutes / 14:30'},
     ],
-    build:(f)=>{ const count=f.rib_count||'[X]', an=f.rib_analgesia||'[method]', sit=f.rib_sitout||'[detail]';
+    build:(f)=>{
+      const count=f.rib_count||'[X]', step=f.rib_step||'Step 1 \u2014 Regular Paracetamol 1g QDS + Codeine 60mg QDS \u00b1 regular NSAID', dynPain=f.rib_dynamic_pain||'0-1 \u2014 No/mild pain';
+      const sit=f.rib_sitout||'[detail]', nextReassess=f.rib_next_reassess;
       let base = pick([
-        `Rib fracture pathway in progress \u2014 ${count} confirmed. Analgesia via ${an}. Incentive spirometry encouraged hourly with effective technique demonstrated. Chest physiotherapy input ongoing. Patient sat out and mobilised: ${sit}. SpO2 maintained above 94% on air.`,
-        `Rib fracture pathway ongoing \u2014 ${count}. Pain managed via ${an}. Encouraged hourly incentive spirometry, effective technique shown. Physio input continuing. Mobilised/sat out: ${sit}. Sats maintained above 94% on air.`
+        `Rib fracture pathway in progress \u2014 ${count} confirmed. Currently on ${step}. Dynamic pain score ${dynPain}. Incentive spirometry encouraged hourly with effective technique demonstrated. Chest physiotherapy input ongoing. Patient sat out and mobilised: ${sit}. SpO2 maintained above 94% on air.`,
+        `Rib fracture pathway ongoing \u2014 ${count}. Currently ${step}. Dynamic pain score ${dynPain}. Encouraged hourly incentive spirometry, effective technique shown. Physio input continuing. Mobilised/sat out: ${sit}. Sats maintained above 94% on air.`
       ]);
-      return base + abgText(f,'rib'); }
+
+      if(dynPain.startsWith('0-1')){
+        const actions = [];
+        if(document.getElementById('rib_low_continue')?.checked) actions.push('current analgesia continued');
+        if(document.getElementById('rib_low_reassurance')?.checked) actions.push('reassurance given');
+        if(document.getElementById('rib_low_environment')?.checked) actions.push('environment reviewed');
+        base += actions.length ? ` ${capitalize(actions.join(', '))}.` : '';
+      } else if(dynPain.startsWith('2-3')){
+        const actions = [];
+        if(document.getElementById('rib_high_parentteam')?.checked) actions.push('surgical (parent) team contacted for medical review');
+        if(document.getElementById('rib_high_hourlyobs')?.checked) actions.push('observations increased to hourly until stable');
+        if(document.getElementById('rib_high_paincontact')?.checked) actions.push('Acute Pain Team/on-call anaesthetist contacted (bleep 238 WRH/1266 ALX in hours, 700 WRH/1907 ALX out of hours)');
+        base += actions.length ? ` ${capitalize(actions.join('; '))}.` : ' Moderate/severe dynamic pain \u2014 escalation per nursing guidance to be actioned.';
+      }
+      if(step.startsWith('Step 3') && document.getElementById('rib_referral_slip')?.checked){
+        base += ' Pain Team referral slip completed and sent.';
+      }
+      if(step.startsWith('Step 3') && f.rib_step3_method){
+        base += ` Analgesia via ${f.rib_step3_method}.`;
+      }
+      if(nextReassess) base += ` Next reassessment ${nextReassess}.`;
+      return base + abgText(f,'rib');
+    }
   },
   ivabx: {
     title:'IV/PO Antibiotics',
   },
   electrolyte: {
     title:'Electrolyte replacement',
+  },
+  ciwa: {
+    title:'CIWA-Ar (alcohol withdrawal)',
+    ciwaScore: true,
+    fields:[
+      {id:'ciwa_nausea', label:'Nausea/vomiting', type:'select', options:['0 - None','1 - Mild nausea with no vomiting','2','3','4 - Intermittent nausea','5','6','7 - Constant nausea and frequent dry heaves and vomiting']},
+      {id:'ciwa_tremor', label:'Tremor', type:'select', options:['0 - No tremor','1 - Not visible, but can be felt fingertip to fingertip','2','3','4 - Moderate, with arms extended','5','6','7 - Severe, even with arms not extended']},
+      {id:'ciwa_sweats', label:'Paroxysmal sweats', type:'select', options:['0 - No sweats visible','1 - Barely perceptible sweating, palms moist','2','3','4 - Beads of sweat obvious on forehead','5','6','7 - Drenching sweats']},
+      {id:'ciwa_anxiety', label:'Anxiety', type:'select', options:['0 - No anxiety, at ease','1 - Mildly anxious','2','3','4 - Moderately anxious, or guarded so anxiety is inferred','5','6','7 - Equivalent to acute panic states as seen in severe delirium']},
+      {id:'ciwa_agitation', label:'Agitation', type:'select', options:['0 - Normal activity','1 - Somewhat more than normal activity','2','3','4 - Moderately fidgety and restless','5','6','7 - Paces back and forth, or constantly thrashes about']},
+      {id:'ciwa_tactile', label:'Tactile disturbances', type:'select', options:['0 - None','1 - Very mild itching/pins and needles/burning/numbness','2 - Mild itching/pins and needles/burning/numbness','3 - Moderate itching/pins and needles/burning/numbness','4 - Moderately severe hallucinations','5 - Severe hallucinations','6 - Extremely severe hallucinations','7 - Continuous hallucinations']},
+      {id:'ciwa_auditory', label:'Auditory disturbances', type:'select', options:['0 - Not present','1 - Very mild harshness or ability to startle','2 - Mild harshness or ability to startle','3 - Moderate harshness or ability to startle','4 - Moderately severe hallucinations','5 - Severe hallucinations','6 - Extremely severe hallucinations','7 - Continuous hallucinations']},
+      {id:'ciwa_visual', label:'Visual disturbances', type:'select', options:['0 - Not present','1 - Very mild sensitivity','2 - Mild sensitivity','3 - Moderate sensitivity','4 - Moderately severe hallucinations','5 - Severe hallucinations','6 - Extremely severe hallucinations','7 - Continuous hallucinations']},
+      {id:'ciwa_headache', label:'Headache, fullness in head', type:'select', options:['0 - Not present','1 - Very mild','2 - Mild','3 - Moderate','4 - Moderately severe','5 - Severe','6 - Very severe','7 - Extremely severe']},
+      {id:'ciwa_orientation', label:'Orientation/clouding of sensorium', type:'select', options:['0 - Oriented, can do serial additions','1 - Cannot do serial additions or uncertain about date','2 - Disoriented for date by no more than 2 calendar days','3 - Disoriented for date by more than 2 calendar days','4 - Disoriented to place and/or person']},
+      {id:'ciwa_prn_med', label:'PRN medication given', type:'select_other', options:['None required','Chlordiazepoxide','Diazepam','Lorazepam']},
+      {id:'ciwa_prn_dose', label:'Dose (if given)', type:'text', placeholder:'e.g. 20mg'},
+      {id:'ciwa_next', label:'Next assessment due', type:'text', placeholder:'e.g. in 2 hours, or per protocol'},
+    ],
+    build:(f)=>{
+      const ids = ['ciwa_nausea','ciwa_tremor','ciwa_sweats','ciwa_anxiety','ciwa_agitation','ciwa_tactile','ciwa_auditory','ciwa_visual','ciwa_headache','ciwa_orientation'];
+      let total = 0, anyFilled = false;
+      ids.forEach(id=>{ if(f[id]!==''){ anyFilled=true; total += parseFloat(f[id])||0; } });
+      const med = f.ciwa_prn_med, dose = f.ciwa_prn_dose, next = f.ciwa_next;
+      if(!anyFilled){
+        let base = 'CIWA-Ar assessment performed (scores pending).';
+        if(med && med!=='None required') base += ` ${med} given${dose?' '+dose:''}.`;
+        if(next) base += ` Next assessment ${next}.`;
+        return base;
+      }
+      let risk, action;
+      if(total<10){ risk='minimal withdrawal'; action='routine monitoring continued per protocol'; }
+      else if(total<=15){ risk='mild-moderate withdrawal'; action='PRN medication considered per protocol, monitoring frequency increased'; }
+      else if(total<=20){ risk='moderate-severe withdrawal'; action='PRN medication given per protocol, surgical SHO informed, monitoring frequency increased'; }
+      else { risk='severe withdrawal \u2014 high risk of complications (seizures, delirium tremens)'; action='surgical SHO informed urgently, senior/ITU review considered, symptom-triggered treatment continued per protocol'; }
+      let base = pick([
+        `CIWA-Ar score ${total}/67 \u2014 ${risk}; ${action}.`,
+        `CIWA-Ar assessed at ${total}/67, indicating ${risk}; ${action}.`
+      ]);
+      if(med && med!=='None required') base += ` ${med} given${dose?' '+dose:''}.`;
+      else if(total>=10) base += ' No PRN medication given this assessment.';
+      if(next) base += ` Next assessment ${next}.`;
+      return base;
+    }
   },
   jejunostomy: {
     title:'Jejunostomy (feeding tube)',
@@ -1997,6 +2220,11 @@ function renderDeviceSections(){
           else if(['_ph','_pco2','_hco3','_lactate','_k'].some(suf=>f.id===t.gasPrefix+suf)) extraAttr = ` oninput="updateGasInterp('${t.gasPrefix}')"`;
         }
         if(f.id==='stoma_bristol') extraAttr = ` onchange="toggleStomaBristolPopups()"`;
+        if(t.ciwaScore && ['ciwa_nausea','ciwa_tremor','ciwa_sweats','ciwa_anxiety','ciwa_agitation','ciwa_tactile','ciwa_auditory','ciwa_visual','ciwa_headache','ciwa_orientation'].includes(f.id)){
+          extraAttr = ` onchange="updateCiwaScore()"`;
+        }
+        if(t.ribPathway && f.id==='rib_dynamic_pain') extraAttr = ` onchange="toggleRibPainEscalation()"`;
+        if(t.ribPathway && f.id==='rib_step') extraAttr = ` onchange="toggleRibReferralSlip()"`;
         if(f.type==='select_other'){
           return `<div><label class="field">${f.label}</label><select id="${f.id}" onchange="toggleOtherField('${f.id}')">${f.options.map(o=>`<option value="${o}">${o}</option>`).join('')}<option value="Other (specify)">Other (specify)</option></select><input type="text" id="${f.id}_other" placeholder="specify..." style="display:none; margin-top:4px;"></div>`;
         }
@@ -2019,6 +2247,26 @@ function renderDeviceSections(){
           <div class="opt"><input type="checkbox" id="${t.gasPrefix}_gas_pathway"><label>Relevant pathway actioned (e.g. Sepsis Six / Hyperkalaemia pathway, as appropriate)</label></div>
         </div>`;
       }
+      if(t.ciwaScore){
+        card.innerHTML += `<div class="hint" id="ciwa_total_display" style="font-weight:700;"></div>`;
+      }
+      if(t.ribPathway){
+        card.innerHTML += `<div class="reveal" id="ribLowPainReveal">
+          <div class="hint">No/mild pain \u2014 nursing actions:</div>
+          <div class="opt"><input type="checkbox" id="rib_low_continue"><label>Continue current analgesia</label></div>
+          <div class="opt"><input type="checkbox" id="rib_low_reassurance"><label>Reassurance given</label></div>
+          <div class="opt"><input type="checkbox" id="rib_low_environment"><label>Environment reviewed</label></div>
+        </div>
+        <div class="reveal" id="ribHighPainReveal">
+          <div class="hint" style="color:var(--danger); font-weight:700;">Moderate/severe pain \u2014 nursing escalation guidance:</div>
+          <div class="opt"><input type="checkbox" id="rib_high_parentteam"><label>Surgical (parent) team contacted for medical review</label></div>
+          <div class="opt"><input type="checkbox" id="rib_high_hourlyobs"><label>Observations increased to hourly until stable</label></div>
+          <div class="opt"><input type="checkbox" id="rib_high_paincontact"><label>Acute Pain Team/on-call anaesthetist contacted (bleep 238 WRH/1266 ALX in hours, 700 WRH/1907 ALX out of hours)</label></div>
+        </div>
+        <div class="reveal" id="ribReferralSlipReveal">
+          <div class="opt"><input type="checkbox" id="rib_referral_slip"><label>Pain Team referral slip completed and sent (required for PCA/regional block)</label></div>
+        </div>`;
+      }
     }
     container.appendChild(card);
   });
@@ -2028,6 +2276,8 @@ function renderDeviceSections(){
     if(t && t.gasPrefix) updateGasInterp(t.gasPrefix);
     if(devId==='ivabx'){ updateAbxLevel(); }
     if(devId==='stoma'){ toggleStomaBristolPopups(); }
+    if(devId==='ciwa'){ updateCiwaScore(); }
+    if(devId==='ribpathway'){ toggleRibPainEscalation(); toggleRibReferralSlip(); }
     if(t && t.fields){ t.fields.forEach(f=>{ if(f.type==='select_other') toggleOtherField(f.id); }); }
   });
 }
@@ -2207,10 +2457,17 @@ function buildNoteText(){
   lines.push('');
 
   const news2 = computeNEWS2();
-  lines.push(pick([
-    `Patient's NEWS2 score was ${news2.total}${news2.missing? ' (vitals incomplete)':''}, with A-E assessment as below:`,
-    `NEWS2 recorded as ${news2.total}${news2.missing? ' (incomplete vitals)':''}; A-E assessment as follows:`
-  ]));
+  const allReadings = getAllNewsReadings();
+  const readingsWithData = allReadings.filter(r=>r.hasAnyData);
+  if(readingsWithData.length<=1){
+    lines.push(pick([
+      `Patient's NEWS2 score was ${news2.total}${news2.missing? ' (vitals incomplete)':''}, with A-E assessment as below:`,
+      `NEWS2 recorded as ${news2.total}${news2.missing? ' (incomplete vitals)':''}; A-E assessment as follows:`
+    ]));
+  } else {
+    const scoreList = readingsWithData.map(r=> r.time ? `${r.total}${r.missing?'*':''} (${r.time})` : `${r.total}${r.missing?'*':''}`).join(', ');
+    lines.push(`NEWS2 recorded across ${readingsWithData.length} observations this shift (${scoreList}); combined A-E assessment below reflects all readings:`);
+  }
   if(document.getElementById('sepsisSixPanel').style.display === 'block'){
     const ss6 = [
       ['ss6_o2','oxygen given to target sats'], ['ss6_fluids','IV fluids given'], ['ss6_abx','IV antibiotics given'],
@@ -2255,14 +2512,14 @@ function buildNoteText(){
       const key = b.dataset.key;
       let t;
       switch(key){
-        case 'B_rr': t = varyRR(rr); break;
-        case 'B_spo2': t = varySpO2(spo2,o2dev,flow,onOxygen,scale2); break;
-        case 'C_hr': t = varyHR(hr); break;
-        case 'C_bp': t = varyBP(sys,dia); break;
+        case 'B_rr': t = combineRR(allReadings); break;
+        case 'B_spo2': t = combineSpO2All(allReadings); break;
+        case 'C_hr': t = combineHR(allReadings); break;
+        case 'C_bp': t = combineBPAll(allReadings); break;
         case 'D_gcs': t = varyGCS2(gcs, evm); break;
         case 'D_pain': t = varyPain(painLevel); break;
         case 'D_bm': t = varyBM(bm); break;
-        case 'E_temp': t = varyTemp(temp); break;
+        case 'E_temp': t = combineTempAll(allReadings); break;
         default: t = pick(STATIC_PHRASES[key]);
       }
       out.push(t);
@@ -2381,56 +2638,36 @@ function buildNoteText(){
     let instructions2 = getVal('ss6_instructions');
     if(instructions2==='Other (specify)') instructions2 = getVal('ss6_instructions_other')||instructions2;
 
+    const supplementary = [];
     for(let i=1;i<=newsEntryCount;i++){
       const r = computeNEWS2Entry(i);
       const time = getVal('newsEntry_time_'+i);
       const note = getVal('newsEntry_note_'+i);
       if(!time && !r.hasAnyData && !note) continue;
-      const timeTxt = time || '[time]';
+      const timeTxt = time || `reading ${i}`;
 
-      if(r.total===0 && !r.missing && r.hasAnyData){
-        let line = pick([
-          `Repeat obs at ${timeTxt}: NEWS2 0, all parameters within normal range, no change in condition.`,
-          `Observations repeated at ${timeTxt} \u2014 NEWS2 0, remains stable throughout.`
-        ]);
-        if(note) line += ` ${note}.`;
-        lines.push(line);
-      } else {
-        const findings = [];
-        if(r.rr!=='' && r.sRR!==0) findings.push(`RR ${r.rr} (${parseFloat(r.rr)<12?'reduced':'elevated'})`);
-        if(r.spo2!=='' && r.sSpO2!==0) findings.push(`SpO2 ${r.spo2}%`);
-        if(r.sys!=='' && r.sBP!==0) findings.push(`BP ${r.sys}/${r.dia||'[X]'} (${parseFloat(r.sys)<111?'hypotensive':'hypertensive'})`);
-        if(r.hr!=='' && r.sHR!==0) findings.push(`HR ${r.hr} (${parseFloat(r.hr)<51?'bradycardic':'tachycardic'})`);
-        if(r.temp!=='' && r.sTemp!==0) findings.push(`Temp ${r.temp}\u00b0C (${parseFloat(r.temp)<36.1?'hypothermic':'pyrexial'})`);
-        if(r.confusion) findings.push('new confusion noted');
+      const actions = [];
+      if(document.getElementById('newsEntry_sho_'+i)?.checked) actions.push('surgical SHO informed');
+      if(document.getElementById('newsEntry_o2given_'+i)?.checked) actions.push('oxygen given');
+      if(document.getElementById('newsEntry_fluids_'+i)?.checked) actions.push('IV fluids given');
+      if(document.getElementById('newsEntry_repeatobs_'+i)?.checked) actions.push('repeat obs arranged');
+      const otherAction = getVal('newsEntry_action_other_'+i);
+      if(otherAction) actions.push(otherAction);
 
-        let line = `Repeat obs at ${timeTxt}: NEWS2 ${r.total}${r.missing?' (vitals incomplete)':''}`;
-        if(findings.length) line += ` \u2014 ${findings.join(', ')}`;
-        line += '.';
-
-        if(r.total>0){
-          const actions = [];
-          if(document.getElementById('newsEntry_sho_'+i)?.checked) actions.push('surgical SHO informed');
-          if(document.getElementById('newsEntry_o2given_'+i)?.checked) actions.push('oxygen given');
-          if(document.getElementById('newsEntry_fluids_'+i)?.checked) actions.push('IV fluids given');
-          if(document.getElementById('newsEntry_repeatobs_'+i)?.checked) actions.push('repeat obs arranged');
-          const otherAction = getVal('newsEntry_action_other_'+i);
-          if(otherAction) actions.push(otherAction);
-
-          if(actions.length){
-            line += ` ${capitalize(actions.join(', '))}.`;
-          } else if(ss6Active){
-            line += ' In keeping with Sepsis Six management already actioned this shift (see above).';
-          } else if(escalatedTo2 || instructions2){
-            line += ' Continues under review per escalation documented above.';
-          } else {
-            line += ' Surgical team aware, closely monitored.';
-          }
-        }
-        if(note) line += ` ${note}.`;
-        lines.push(line);
+      const parts = [];
+      if(r.confusion) parts.push('new confusion noted \u2014 surgical SHO informed');
+      if(actions.length){
+        parts.push(actions.join(', '));
+      } else if(r.isAbnormal){
+        if(ss6Active) parts.push('in keeping with Sepsis Six management already actioned this shift (see above)');
+        else if(escalatedTo2 || instructions2) parts.push('continues under review per escalation documented above');
+        else parts.push('surgical team aware, closely monitored');
       }
+      if(note) parts.push(note);
+
+      if(parts.length) supplementary.push(`At ${timeTxt}: ${capitalize(parts.join('; '))}.`);
     }
+    if(supplementary.length) lines.push(...supplementary);
   }
   lines.push('');
 
@@ -2463,7 +2700,9 @@ function buildNoteText(){
     const states = Array.from(document.querySelectorAll('.urineState:checked')).map(el=>el.value);
     const stateTxt = states.length ? states.join(', ') : 'clear, pale yellow';
     if(method==='normal'){
-      ubLines.push(pick([`Passing urine in the toilet, ${stateTxt}.`, `Urine ${stateTxt}, passed in the toilet without difficulty.`]));
+      const normalMethodMap = {toilet:'the toilet', bottle:'a urine bottle/urinal', bedpan:'a bedpan', commode:'a commode', pad:'continence pad/pants'};
+      const whereTxt = normalMethodMap[getVal('urineNormalMethod')] || 'the toilet';
+      ubLines.push(pick([`Passing urine in ${whereTxt}, ${stateTxt}.`, `Urine ${stateTxt}, passed in ${whereTxt} without difficulty.`]));
     } else if(method==='Other (specify)'){
       const other = getVal('urineMethod_other')||'[specify method]';
       ubLines.push(pick([`Urine drained via ${other}, ${stateTxt}.`, `${other} in use for urine drainage; output ${stateTxt}.`]));
@@ -2503,6 +2742,13 @@ function buildNoteText(){
       }
     } else if(bowelSel==='notopened'){
       ubLines.push(pick([`Bowels not opened for ${getVal('bowelDays')||'[X]'} days; Laxido given as prescribed.`, `No bowel motion for ${getVal('bowelDays')||'[X]'} days; Laxido administered as charted.`]));
+    } else if(bowelSel==='flexiseal'){
+      const vol = getVal('bowelFlexisealVol'), consistency = getVal('bowelFlexisealConsistency')||'liquid stool', skin = getVal('bowelFlexisealSkin')||'Intact';
+      ubLines.push(pick([
+        `Flexiseal (faecal management system) in situ, draining ${consistency}${vol?', '+vol+'ml this shift':''}. Perianal skin ${skin.toLowerCase()}.`,
+        `Flexiseal FMS in place, output ${consistency}${vol?' ('+vol+'ml)':''}. Perianal skin ${skin.toLowerCase()}.`
+      ]));
+      if(skin==='Broken/excoriated') ubLines.push('Perianal skin breakdown noted \u2014 barrier cream applied, TVN referral considered.');
     }
   }
   if(ubLines.length){
