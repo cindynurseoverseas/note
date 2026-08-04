@@ -73,6 +73,39 @@
   .photoBanner:hover img{transform:scale(1.03);}
   .photoShuffleBtn{position:absolute; bottom:10px; right:14px; background:rgba(255,255,255,0.88); color:var(--primary); border:none; padding:7px 16px; border-radius:20px; font-size:0.78rem; font-weight:700; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,0.22); transition:background .15s ease, transform .15s ease; z-index:2;}
   .photoShuffleBtn:hover{background:#fff; transform:scale(1.04);}
+  .step{display:none;}
+  .step.active{display:block;}
+  .stepindicator{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:18px; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);}
+  .stepdot{display:flex; align-items:center; gap:6px; padding:6px 10px; border-radius:20px; cursor:pointer; font-size:0.76rem; color:var(--ink-soft); transition:background .15s ease, color .15s ease; flex:1 1 auto; min-width:0;}
+  .stepdot:hover{background:var(--primary-dim);}
+  .stepdot-num{display:flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:var(--border); color:var(--ink); font-weight:700; font-size:0.7rem; flex-shrink:0;}
+  .stepdot-label{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .stepdot.active{background:var(--primary); color:#fff;}
+  .stepdot.active .stepdot-num{background:#fff; color:var(--primary);}
+  .stepdot.done .stepdot-num{background:var(--primary-light); color:#fff;}
+  .stepnav{display:flex; justify-content:space-between; align-items:center; margin-top:20px; padding-top:16px; border-top:1px solid var(--border);}
+  .stepnav-btn{background:var(--primary); color:#fff; border:none; padding:10px 20px; border-radius:var(--radius); font-weight:700; font-size:0.85rem; cursor:pointer; transition:background .15s ease;}
+  .stepnav-btn:hover{background:var(--primary-light);}
+  .stepnav-back{background:var(--surface-alt); color:var(--ink);}
+  @media (max-width:700px){ .stepdot-label{display:none;} .stepdot{flex:0 0 auto; padding:6px;} }
+
+  .stepdot.filled .stepdot-num{background:var(--primary-light); color:#fff;}
+  .stepdot.active.filled .stepdot-num{background:#fff; color:var(--primary);}
+
+  .actionbar{position:fixed; left:0; right:0; bottom:0; background:rgba(255,255,255,0.97); border-top:1px solid var(--border); box-shadow:0 -2px 14px rgba(0,0,0,0.08); z-index:50;}
+  .actionbar-inner{max-width:1180px; margin:0 auto; padding:10px 20px; display:flex; align-items:center; gap:10px;}
+  .ab-label{font-size:0.8rem; color:var(--ink-soft); font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .ab-spacer{flex:1;}
+  .ab-save{font-size:0.72rem; color:#8AA39D; white-space:nowrap;}
+  .actionbar .stepnav-btn{padding:8px 14px;}
+  .actionbar .generate{padding:9px 18px; font-size:0.87rem;}
+  .actionbar .stepnav-btn:disabled{opacity:0.35; cursor:default;}
+  .draftbar{display:none; align-items:center; gap:10px; flex-wrap:wrap; background:var(--primary-dim); border:1px solid var(--primary-light); border-radius:var(--radius); padding:10px 14px; margin-bottom:14px; font-size:0.84rem; color:var(--primary);}
+  .draftbar.show{display:flex;}
+  .draftbar button{border:none; border-radius:7px; padding:7px 14px; font-weight:700; font-size:0.8rem; cursor:pointer;}
+  .draftbar .db-restore{background:var(--primary); color:#fff;}
+  .draftbar .db-discard{background:#fff; color:var(--ink-soft); border:1px solid var(--border);}
+  @media (max-width:700px){ .ab-label, .ab-save{display:none;} }
 </style>
 </head>
 <body>
@@ -83,6 +116,13 @@
     <button type="button" class="photoShuffleBtn" onclick="event.stopPropagation(); loadMemoryPhoto();">🔀 New photo</button>
   </div>
 
+  <div class="draftbar" id="draftBar">
+    <span id="draftBarText">Unsaved entry found.</span>
+    <span class="ab-spacer"></span>
+    <button type="button" class="db-restore" onclick="restoreDraft()">Restore it</button>
+    <button type="button" class="db-discard" onclick="discardDraft()">Start fresh</button>
+  </div>
+
   <header class="top">
     <div>
       <h1>Surgical Ward Note Builder</h1>
@@ -90,14 +130,17 @@
     </div>
   </header>
 
-  <div class="card">
+  <div class="stepindicator" id="stepIndicator"><div class="stepdot" data-stepdot="1" onclick="goToStep(1)"><span class="stepdot-num">1</span><span class="stepdot-label">Patient & Procedure</span></div><div class="stepdot" data-stepdot="2" onclick="goToStep(2)"><span class="stepdot-num">2</span><span class="stepdot-label">Devices & Interventions</span></div><div class="stepdot" data-stepdot="3" onclick="goToStep(3)"><span class="stepdot-num">3</span><span class="stepdot-label">Opening / Handover</span></div><div class="stepdot" data-stepdot="4" onclick="goToStep(4)"><span class="stepdot-num">4</span><span class="stepdot-label">Assessment (A–E)</span></div><div class="stepdot" data-stepdot="5" onclick="goToStep(5)"><span class="stepdot-num">5</span><span class="stepdot-label">Mobility, Diet & Fluids</span></div><div class="stepdot" data-stepdot="6" onclick="goToStep(6)"><span class="stepdot-num">6</span><span class="stepdot-label">Urine & Bowel</span></div><div class="stepdot" data-stepdot="7" onclick="goToStep(7)"><span class="stepdot-num">7</span><span class="stepdot-label">Blood Results & Fluid Balance</span></div><div class="stepdot" data-stepdot="8" onclick="goToStep(8)"><span class="stepdot-num">8</span><span class="stepdot-label">Specialty Team & Notes</span></div><div class="stepdot" data-stepdot="9" onclick="goToStep(9)"><span class="stepdot-num">9</span><span class="stepdot-label">Generate Note</span></div></div>
+
+<div class="step" data-step="1" id="step1">
+<div class="card">
     <h2>Diagnosis <span class="tag">select all that apply</span></h2>
     <div class="pillgroup" id="dxGroup"></div>
   </div>
 
   <div class="grid-top">
     <div class="card">
-      <h2>Procedure <span class="tag">optional \u2014 leave blank if no surgery</span></h2>
+      <h2>Procedure <span class="tag">optional — leave blank if no surgery</span></h2>
       <div class="pillgroup" id="procGroup"></div>
     </div>
     <div class="card">
@@ -109,7 +152,12 @@
     </div>
   </div>
 
-  <div class="card">
+  
+<div class="stepnav"><span></span><button type="button" class="stepnav-btn stepnav-next" onclick="goToStep(2)">Next →</button></div>
+</div>
+
+<div class="step" data-step="2" id="step2">
+<div class="card">
     <h2>Devices &amp; Interventions <span class="tag">ticking these reveals a documentation section below</span></h2>
     <div class="hint">Lines, feeding &amp; drains</div>
     <div class="pillgroup" id="devGroupLines"></div>
@@ -123,7 +171,15 @@
     <div class="pillgroup" id="devGroupSymptoms"></div>
   </div>
 
-  <!-- OPENING -->
+  <!-- DEVICE SECTIONS (hidden until ticked above) -->
+  <div id="deviceSections"></div>
+
+  
+<div class="stepnav"><button type="button" class="stepnav-btn stepnav-back" onclick="goToStep(1)">← Back</button><button type="button" class="stepnav-btn stepnav-next" onclick="goToStep(3)">Next →</button></div>
+</div>
+
+<div class="step" data-step="3" id="step3">
+<!-- OPENING -->
   <div class="card">
     <h2>Opening / Handover</h2>
     <div class="row2">
@@ -152,7 +208,12 @@
     <input type="text" id="handoverTime" placeholder="defaults to 07:00 / 19:00 — or type 0730, 13:30, 7am...">
   </div>
 
-  <!-- ASSESSMENT -->
+  
+<div class="stepnav"><button type="button" class="stepnav-btn stepnav-back" onclick="goToStep(2)">← Back</button><button type="button" class="stepnav-btn stepnav-next" onclick="goToStep(4)">Next →</button></div>
+</div>
+
+<div class="step" data-step="4" id="step4">
+<!-- ASSESSMENT -->
   <div class="card">
     <h2>Assessment</h2>
     <div class="hint">NEWS2 is calculated automatically from the vitals below (RCP NEWS2, Scale 1 by default). Always cross-check against your trust's chart — this is a documentation aid, not a substitute for clinical judgement.</div>
@@ -235,14 +296,14 @@
     </div>
 
     <div class="reveal" id="bmLowPanel">
-      <div class="hint" style="color:var(--danger); font-weight:700;">BM &lt;4 mmol/L \u2014 Hypoglycaemia pathway:</div>
+      <div class="hint" style="color:var(--danger); font-weight:700;">BM &lt;4 mmol/L — Hypoglycaemia pathway:</div>
       <div class="opt"><input type="checkbox" id="hypo_carb"><label>Quick-acting carbohydrate given (e.g. Glucojuice/Lucozade/GlucoGel) or IV 10% glucose/IM Glucagon if severe/NBM</label></div>
-      <div class="opt"><input type="checkbox" id="hypo_recheck"><label>BM rechecked within 10\u201315 minutes</label></div>
+      <div class="opt"><input type="checkbox" id="hypo_recheck"><label>BM rechecked within 10–15 minutes</label></div>
       <div class="opt"><input type="checkbox" id="hypo_longacting"><label>Once BM &gt;4: longer-acting carbohydrate given (e.g. toast, biscuits)</label></div>
       <div class="opt"><input type="checkbox" id="hypo_medteam"><label>Surgical SHO informed</label></div>
     </div>
     <div class="reveal" id="bmHighPanel">
-      <div class="hint" style="color:var(--danger); font-weight:700;">BM &gt;15 mmol/L \u2014 check ketones:</div>
+      <div class="hint" style="color:var(--danger); font-weight:700;">BM &gt;15 mmol/L — check ketones:</div>
       <div class="opt"><input type="checkbox" id="hyper_ketone_chk"><label>Blood/urine ketones checked</label></div>
       <input type="text" id="hyper_ketone_value" placeholder="ketone result, e.g. 0.3mmol/L or negative">
       <div class="opt"><input type="checkbox" id="hyper_medteam"><label>Surgical SHO informed</label></div>
@@ -250,7 +311,7 @@
     </div>
 
     <div class="reveal" id="sepsisSixPanel">
-      <div style="color:var(--danger); font-weight:800; font-size:0.85rem; letter-spacing:0.03em; text-transform:uppercase; margin-bottom:8px;">\u26a0 NEWS2/observations suggest possible deterioration or query sepsis \u2014 Sepsis Six (3 in / 3 out)</div>
+      <div style="color:var(--danger); font-weight:800; font-size:0.85rem; letter-spacing:0.03em; text-transform:uppercase; margin-bottom:8px;">⚠ NEWS2/observations suggest possible deterioration or query sepsis — Sepsis Six (3 in / 3 out)</div>
       <div class="row2">
         <div>
           <div style="font-size:0.72rem; font-weight:700; color:var(--primary); margin-bottom:4px;">3 IN (give)</div>
@@ -269,7 +330,7 @@
       <div class="row2" style="margin-top:8px;">
         <div><label class="field">Escalated to (role/name)</label><input type="text" id="ss6_escalated_to" placeholder="e.g. SHO Dr X / Outreach / bleep 688"></div>
         <div><label class="field">Instructions</label><select id="ss6_instructions" onchange="toggleOtherField('ss6_instructions')">
-          <option value="">\u2014</option>
+          <option value="">—</option>
           <option>Continue current management, reassess in 1 hour</option>
           <option>Urgent senior/consultant review requested</option>
           <option>For repeat bloods/lactate</option>
@@ -301,7 +362,7 @@
     <div id="newsEntriesContainer"></div>
     <div>
       <button type="button" class="reword" style="padding:6px 12px; font-size:0.78rem;" onclick="addNewsEntry()">+ Add another NEWS2 recording</button>
-      <button type="button" id="newsEntryRemoveBtn" class="reword" style="padding:6px 12px; font-size:0.78rem; display:none;" onclick="removeNewsEntry()">\u2212 Remove last recording</button>
+      <button type="button" id="newsEntryRemoveBtn" class="reword" style="padding:6px 12px; font-size:0.78rem; display:none;" onclick="removeNewsEntry()">− Remove last recording</button>
     </div>
 
     <div class="abgrid">
@@ -382,80 +443,101 @@
         <div class="reveal" id="E_tedsremoved_reveal"><input type="text" id="E_tedsremoved_reason" placeholder="e.g. digging into skin"></div>
         <div class="opt"><input type="checkbox" id="E_wound_chk" onchange="toggleShow('E_wound_chk','E_wound_reveal')"><label>Wound present</label></div>
         <div class="reveal" id="E_wound_reveal">
-          <div class="row2">
-            <div><label class="field">Site</label><input type="text" id="E_wound_site" placeholder="e.g. RIF, midline"></div>
-            <div><label class="field">Dressing type</label><select id="E_wound_dressing">
-              <option value="simple">Simple/dry dressing (e.g. Mepore)</option>
-              <option value="absorbent">Absorbent dressing (e.g. Zetuvit)</option>
-              <option value="foam">Foam dressing (e.g. Mepilex/Allevyn)</option>
-              <option value="hydrocolloid">Hydrocolloid (e.g. DuoDERM)</option>
-              <option value="alginate">Alginate (e.g. Kaltostat)</option>
-              <option value="silver">Antimicrobial/silver dressing (e.g. Aquacel Ag)</option>
-              <option value="vac">VAC/negative pressure dressing</option>
-              <option value="glue">Glue/steri-strips</option>
-              <option value="staples">Staples/clips</option>
-              <option value="none">No dressing / wound exposed</option>
-            </select></div>
-          </div>
-          <div class="row2">
-            <div><label class="field">Condition</label><select id="E_wound_condition">
-              <option value="intact">Dry and intact, no leakage or oozing</option>
-              <option value="ooze">Slight ooze noted, dressing intact</option>
-              <option value="leaking">Leaking, dressing changed</option>
-              <option value="offensive">Signs of infection/offensive, surgical team aware</option>
-            </select></div>
-            <div><label class="field">Notes (optional)</label><input type="text" id="E_wound_text" placeholder="anything else"></div>
+          <div id="woundEntriesContainer"></div>
+          <div>
+            <button type="button" class="reword" style="padding:6px 12px; font-size:0.78rem;" onclick="addWoundEntry()">+ Add another wound</button>
+            <button type="button" id="woundEntryRemoveBtn" class="reword" style="padding:6px 12px; font-size:0.78rem; display:none;" onclick="removeWoundEntry()">− Remove last wound</button>
           </div>
         </div>
       </fieldset>
     </div>
   </div>
 
-  <!-- MOBILITY -->
-  <div class="card">
-    <h2>Mobility <span class="tag">select all that apply</span></h2>
-    <div class="pillgroup" id="mobGroup"></div>
-  </div>
+  
+<div class="stepnav"><button type="button" class="stepnav-btn stepnav-back" onclick="goToStep(3)">← Back</button><button type="button" class="stepnav-btn stepnav-next" onclick="goToStep(5)">Next →</button></div>
+</div>
 
-  <!-- DIET -->
+<div class="step" data-step="5" id="step5">
+<!-- MOBILITY -->
   <div class="card">
-    <h2>Diet <span class="tag">IDDSI food levels 3&ndash;7</span></h2>
-    <select id="dietSel">
-      <option value="normal">Normal diet, no modification (IDDSI Level 7 – Regular)</option>
-      <option value="L7">IDDSI Level 7 – Easy to Chew</option>
-      <option value="L6">IDDSI Level 6 – Soft &amp; Bite-Sized</option>
-      <option value="L5">IDDSI Level 5 – Minced &amp; Moist</option>
-      <option value="L4">IDDSI Level 4 – Pureed</option>
-      <option value="L3">IDDSI Level 3 – Liquidised</option>
-      <option value="soupsweet">Soup and sweet</option>
-      <option value="nbm">Nil by mouth</option>
-      <option value="partial">Partial — refused earlier, some intake later</option>
+    <h2>Mobility</h2>
+    <select id="mobilitySelect">
+      <optgroup label="Mobile (no walking aid)">
+        <option value="mobile_indep">Independent</option>
+        <option value="mobile_ao1">Assistance of 1 (AO1)</option>
+        <option value="mobile_ao2">Assistance of 2 (AO2)</option>
+      </optgroup>
+      <optgroup label="Zimmer frame (ZF)">
+        <option value="zf_indep">Independent</option>
+        <option value="zf_ao1">Assistance of 1 (AO1)</option>
+        <option value="zf_ao2">Assistance of 2 (AO2)</option>
+      </optgroup>
+      <optgroup label="Pulpit frame">
+        <option value="pulpit_indep">Independent</option>
+        <option value="pulpit_ao1">Assistance of 1 (AO1)</option>
+        <option value="pulpit_ao2">Assistance of 2 (AO2)</option>
+      </optgroup>
+      <optgroup label="Sara Stedy">
+        <option value="sarastedy_ao1">Assistance of 1 (AO1)</option>
+        <option value="sarastedy_ao2">Assistance of 2 (AO2)</option>
+      </optgroup>
+      <optgroup label="Standing hoist">
+        <option value="standhoist_ao1">Assistance of 1 (AO1)</option>
+        <option value="standhoist_ao2">Assistance of 2 (AO2)</option>
+      </optgroup>
+      <optgroup label="Full hoist">
+        <option value="fullhoist_ao2">Assistance of 2 (AO2)</option>
+      </optgroup>
+      <option value="bedbound">Bed-bound / not mobilising</option>
     </select>
-    <div class="hint">IDDSI food levels only run 3&ndash;7 (levels 0&ndash;2 are drinks-only) — Level 7 covers both "regular, no modification" and "easy to chew", so pick whichever fits.</div>
   </div>
 
-  <!-- FLUIDS -->
-  <div class="card">
-    <h2>Fluids <span class="tag">IDDSI drink levels 0&ndash;4</span></h2>
-    <select id="fluidSel">
-      <option value="free">Free fluids, thin/unmodified (IDDSI Level 0)</option>
-      <option value="clear">Clear fluids only</option>
-      <option value="sip">Sip water only</option>
-      <option value="L1">IDDSI Level 1 – Slightly Thick</option>
-      <option value="L2">IDDSI Level 2 – Mildly Thick</option>
-      <option value="L3f">IDDSI Level 3 – Moderately Thick</option>
-      <option value="L4f">IDDSI Level 4 – Extremely Thick</option>
-      <option value="nbm">Nil by mouth (no oral fluids)</option>
-    </select>
+  <div class="grid-top">
+    <!-- DIET -->
+    <div class="card">
+      <h2>Diet <span class="tag">IDDSI food levels 3&ndash;7</span></h2>
+      <select id="dietSel">
+        <option value="normal">Normal diet, no modification (IDDSI Level 7 – Regular)</option>
+        <option value="L7">IDDSI Level 7 – Easy to Chew</option>
+        <option value="L6">IDDSI Level 6 – Soft &amp; Bite-Sized</option>
+        <option value="L5">IDDSI Level 5 – Minced &amp; Moist</option>
+        <option value="L4">IDDSI Level 4 – Pureed</option>
+        <option value="L3">IDDSI Level 3 – Liquidised</option>
+        <option value="soupsweet">Soup and sweet</option>
+        <option value="nbm">Nil by mouth</option>
+        <option value="partial">Partial — refused earlier, some intake later</option>
+      </select>
+      <div class="hint">IDDSI food levels only run 3&ndash;7 (levels 0&ndash;2 are drinks-only) — Level 7 covers both "regular, no modification" and "easy to chew", so pick whichever fits.</div>
+    </div>
 
-    <div class="opt" style="margin-top:10px;"><input type="checkbox" id="fluidRestrict_chk" onchange="toggleShow('fluidRestrict_chk','fluidRestrict_reveal')"><label>Fluid restriction in place</label></div>
-    <div class="reveal" id="fluidRestrict_reveal"><input type="text" id="fluidRestrict_text" placeholder="e.g. restricted to 1500ml/24hr, currently at 800ml this shift"></div>
+    <!-- FLUIDS -->
+    <div class="card">
+      <h2>Fluids <span class="tag">IDDSI drink levels 0&ndash;4</span></h2>
+      <select id="fluidSel">
+        <option value="free">Free fluids, thin/unmodified (IDDSI Level 0)</option>
+        <option value="clear">Clear fluids only</option>
+        <option value="sip">Sip water only</option>
+        <option value="L1">IDDSI Level 1 – Slightly Thick</option>
+        <option value="L2">IDDSI Level 2 – Mildly Thick</option>
+        <option value="L3f">IDDSI Level 3 – Moderately Thick</option>
+        <option value="L4f">IDDSI Level 4 – Extremely Thick</option>
+        <option value="nbm">Nil by mouth (no oral fluids)</option>
+      </select>
 
-    <div class="opt"><input type="checkbox" id="fluidORS_chk" onchange="toggleShow('fluidORS_chk','fluidORS_reveal')"><label>Oral rehydration/electrolyte solution given</label></div>
-    <div class="reveal" id="fluidORS_reveal"><input type="text" id="fluidORS_text" placeholder="e.g. St Mark's solution 1L, encouraged hourly for high stoma output"></div>
+      <div class="opt" style="margin-top:10px;"><input type="checkbox" id="fluidRestrict_chk" onchange="toggleShow('fluidRestrict_chk','fluidRestrict_reveal')"><label>Fluid restriction in place</label></div>
+      <div class="reveal" id="fluidRestrict_reveal"><input type="text" id="fluidRestrict_text" placeholder="e.g. restricted to 1500ml/24hr, currently at 800ml this shift"></div>
+
+      <div class="opt"><input type="checkbox" id="fluidORS_chk" onchange="toggleShow('fluidORS_chk','fluidORS_reveal')"><label>Oral rehydration/electrolyte solution given</label></div>
+      <div class="reveal" id="fluidORS_reveal"><input type="text" id="fluidORS_text" placeholder="e.g. St Mark's solution 1L, encouraged hourly for high stoma output"></div>
+    </div>
   </div>
 
-  <!-- URINE & BOWEL -->
+  
+<div class="stepnav"><button type="button" class="stepnav-btn stepnav-back" onclick="goToStep(4)">← Back</button><button type="button" class="stepnav-btn stepnav-next" onclick="goToStep(6)">Next →</button></div>
+</div>
+
+<div class="step" data-step="6" id="step6">
+<!-- URINE & BOWEL -->
   <div class="card">
     <h2>Urine &amp; Bowel</h2>
     <div class="row2">
@@ -483,12 +565,6 @@
               <option value="commode">Commode</option>
               <option value="pad">Continence pad/pants</option>
             </select>
-          </div>
-          <div class="reveal" id="urineCatheterReveal">
-            <div class="row2">
-              <div><label class="field">Catheter type</label><select id="urineCatheterType"><option value="Foley 2-way">Foley 2-way</option><option value="Foley 3-way (irrigation)">Foley 3-way (irrigation)</option></select></div>
-              <div><label class="field">Days in situ (optional)</label><input type="text" id="urineCatheterDays"></div>
-            </div>
           </div>
           <label class="field" style="margin-top:8px;">Urine condition (tick all that apply)</label>
           <div class="opt"><input type="checkbox" class="urineState" id="urine_clear_chk" value="clear, pale yellow" checked><label>Clear, pale yellow (normal)</label></div>
@@ -527,13 +603,13 @@
             </div>
             <label class="field">Bristol Stool type</label>
             <select id="bowelBristol" onchange="toggleBowelBristolPopups()">
-              <option value="1">Type 1 \u2014 separate hard lumps (constipation)</option>
-              <option value="2">Type 2 \u2014 sausage-shaped, lumpy</option>
-              <option value="3">Type 3 \u2014 sausage-shaped, cracked surface</option>
-              <option value="4" selected>Type 4 \u2014 smooth, soft sausage (ideal)</option>
-              <option value="5">Type 5 \u2014 soft blobs, clear edges</option>
-              <option value="6">Type 6 \u2014 mushy, ragged edges</option>
-              <option value="7">Type 7 \u2014 watery, no solid pieces (diarrhoea)</option>
+              <option value="1">Type 1 — separate hard lumps (constipation)</option>
+              <option value="2">Type 2 — sausage-shaped, lumpy</option>
+              <option value="3">Type 3 — sausage-shaped, cracked surface</option>
+              <option value="4" selected>Type 4 — smooth, soft sausage (ideal)</option>
+              <option value="5">Type 5 — soft blobs, clear edges</option>
+              <option value="6">Type 6 — mushy, ragged edges</option>
+              <option value="7">Type 7 — watery, no solid pieces (diarrhoea)</option>
             </select>
             <div class="reveal" id="bowelLaxativeReveal">
               <label class="field">Laxative given?</label>
@@ -552,10 +628,43 @@
     </div>
   </div>
 
-  <!-- DEVICE SECTIONS (hidden until ticked above) -->
-  <div id="deviceSections"></div>
+  
+<div class="stepnav"><button type="button" class="stepnav-btn stepnav-back" onclick="goToStep(5)">← Back</button><button type="button" class="stepnav-btn stepnav-next" onclick="goToStep(7)">Next →</button></div>
+</div>
 
-  <!-- SPECIALTY TEAM INPUT -->
+<div class="step" data-step="7" id="step7">
+<!-- BLOOD RESULTS -->
+  <div class="card">
+    <h2>Blood Results <span class="tag">optional</span></h2>
+    <div class="opt"><input type="checkbox" id="BR_chk" onchange="toggleShow('BR_chk','BR_reveal')"><label>Document deranged blood result(s) this shift</label></div>
+    <div class="reveal" id="BR_reveal">
+      <div id="bloodResultEntriesContainer"></div>
+      <div>
+        <button type="button" class="reword" style="padding:6px 12px; font-size:0.78rem;" onclick="addBloodResultEntry()">+ Add another blood result</button>
+        <button type="button" id="bloodResultRemoveBtn" class="reword" style="padding:6px 12px; font-size:0.78rem; display:none;" onclick="removeBloodResultEntry()">− Remove last</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLUID BALANCE -->
+  <div class="card">
+    <h2>Fluid Balance &amp; Daily Record <span class="tag">optional, typically completed at night</span></h2>
+    <div class="opt"><input type="checkbox" id="FB_chk" onchange="toggleShow('FB_chk','FB_reveal')"><label>Document 24hr fluid balance this shift</label></div>
+    <div class="reveal" id="FB_reveal">
+      <div id="FB_entriesContainer"></div>
+      <div>
+        <button type="button" class="reword" style="padding:6px 12px; font-size:0.78rem;" onclick="addFbEntry()">+ Add another fluid balance entry</button>
+        <button type="button" id="FB_entryRemoveBtn" class="reword" style="padding:6px 12px; font-size:0.78rem; display:none;" onclick="removeFbEntry()">− Remove last entry</button>
+      </div>
+    </div>
+  </div>
+
+  
+<div class="stepnav"><button type="button" class="stepnav-btn stepnav-back" onclick="goToStep(6)">← Back</button><button type="button" class="stepnav-btn stepnav-next" onclick="goToStep(8)">Next →</button></div>
+</div>
+
+<div class="step" data-step="8" id="step8">
+<!-- SPECIALTY TEAM INPUT -->
   <div class="card">
     <h2>Specialty Team Input <span class="tag">optional</span></h2>
     <div id="wardRoundField">
@@ -591,19 +700,6 @@
     </div>
   </div>
 
-  <!-- FLUID BALANCE -->
-  <div class="card">
-    <h2>Fluid Balance &amp; Daily Record <span class="tag">optional \u2014 typically completed at night</span></h2>
-    <div class="opt"><input type="checkbox" id="FB_chk" onchange="toggleShow('FB_chk','FB_reveal')"><label>Document 24hr fluid balance this shift</label></div>
-    <div class="reveal" id="FB_reveal">
-      <div id="FB_entriesContainer"></div>
-      <div>
-        <button type="button" class="reword" style="padding:6px 12px; font-size:0.78rem;" onclick="addFbEntry()">+ Add another fluid balance entry</button>
-        <button type="button" id="FB_entryRemoveBtn" class="reword" style="padding:6px 12px; font-size:0.78rem; display:none;" onclick="removeFbEntry()">\u2212 Remove last entry</button>
-      </div>
-    </div>
-  </div>
-
   <!-- ADDITIONAL NOTES -->
   <div class="card">
     <h2>Additional Notes <span class="tag">optional</span></h2>
@@ -626,15 +722,35 @@
     <div class="reveal" id="AN_investigations_reveal"><input type="text" id="AN_investigations_text" placeholder="e.g. ABG performed 15:40, pH 7.50, surgical team aware"></div>
   </div>
 
-  <div class="genbar">
+  
+<div class="stepnav"><button type="button" class="stepnav-btn stepnav-back" onclick="goToStep(7)">← Back</button><button type="button" class="stepnav-btn stepnav-next" onclick="goToStep(9)">Next →</button></div>
+</div>
+
+<div class="step" data-step="9" id="step9">
+<div class="genbar">
     <button class="generate" onclick="generateNote()">Generate Note</button>
     <button class="reword" onclick="generateNote()">🎲 Reword (same selections)</button>
-    <button class="copy" onclick="copyNote()">Copy to clipboard</button>
-    <button class="copy" style="background:#FBEAEA; color:var(--danger); border-color:var(--danger);" onclick="resetForm()">\u21bb Reset (new patient)</button>
+    <button class="copy" id="copyBtn" onclick="copyNote()">Copy to clipboard</button>
+    <button class="copy" style="background:#FBEAEA; color:var(--danger); border-color:var(--danger);" onclick="resetForm()">Reset (new patient)</button>
     <div class="smallnote">Each click re-picks wording from several variants per line. Vital-sign lines only claim "normal" when the entered value actually scores 0 on NEWS2 — abnormal values are flagged rather than smoothed over.</div>
     <textarea id="noteOut" readonly placeholder="Your generated note will appear here..."></textarea>
   </div>
 
+<div class="stepnav"><button type="button" class="stepnav-btn stepnav-back" onclick="goToStep(8)">← Back</button><span></span></div>
+</div>
+
+
+</div>
+
+<div class="actionbar" id="actionBar">
+  <div class="actionbar-inner">
+    <button type="button" class="stepnav-btn stepnav-back" id="abBack" onclick="goToStep(currentStep-1)">← Back</button>
+    <button type="button" class="stepnav-btn" id="abNext" onclick="goToStep(currentStep+1)">Next →</button>
+    <span class="ab-label" id="abStepLabel"></span>
+    <span class="ab-spacer"></span>
+    <span class="ab-save" id="abSave"></span>
+    <button type="button" class="generate" onclick="jumpAndGenerate()">Generate note</button>
+  </div>
 </div>
 
 <script>
@@ -755,6 +871,22 @@ function loadMemoryPhoto(){
   }
 }
 loadMemoryPhoto();
+let currentStep = 1;
+const TOTAL_STEPS = 9;
+function goToStep(n){
+  if(n<1 || n>TOTAL_STEPS) return;
+  currentStep = n;
+  document.querySelectorAll('.step').forEach(el=>{
+    el.classList.toggle('active', parseInt(el.dataset.step)===n);
+  });
+  document.querySelectorAll('.stepdot').forEach(el=>{
+    const dotN = parseInt(el.dataset.stepdot);
+    el.classList.toggle('active', dotN===n);
+    el.classList.toggle('done', dotN<n);
+  });
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+goToStep(1);
 const DIAGNOSES = [
   {id:'bowel_obs', label:'Bowel obstruction'},
   {id:'rib_fx', label:'Rib fractures'},
@@ -771,6 +903,14 @@ const DIAGNOSES = [
   {id:'biliary_colic', label:'Biliary colic / gallstones'},
   {id:'pilonidal', label:'Pilonidal sinus disease'},
   {id:'adhesions', label:'Adhesions'},
+  {id:'open_fracture', label:'Open fracture'},
+  {id:'closed_fracture', label:'Closed fracture'},
+  {id:'nof_fracture', label:'Neck of femur fracture'},
+  {id:'ankle_fracture', label:'Ankle fracture'},
+  {id:'wrist_fracture', label:'Wrist/distal radius fracture'},
+  {id:'tib_fib_fracture', label:'Tibia/fibula fracture'},
+  {id:'septic_joint', label:'Septic arthritis / joint infection'},
+  {id:'traumatic_wound', label:'Traumatic wound/laceration'},
 ];
 
 const PROCEDURES = [
@@ -790,6 +930,11 @@ const PROCEDURES = [
   {id:'stoma_reversal', label:'Stoma reversal'},
   {id:'abscess_drainage', label:'Drainage of abscess'},
   {id:'pilonidal_excision', label:'Pilonidal sinus excision'},
+  {id:'orif', label:'ORIF (Open Reduction Internal Fixation)'},
+  {id:'washout', label:'Washout/debridement'},
+  {id:'ex_fix', label:'External fixation'},
+  {id:'closed_reduction', label:'Closed reduction and casting'},
+  {id:'hemiarthroplasty', label:'Hemiarthroplasty'},
 ];
 
 const DEVICES_LINES = [
@@ -803,10 +948,12 @@ const DEVICES_LINES = [
   {id:'ivabx', label:'IV/PO Antibiotics'},
   {id:'stoma', label:'Stoma'},
   {id:'drain', label:'Wound drain'},
-  {id:'plaster', label:'Plaster/fixation'},
+  {id:'plaster', label:'Neurovascular obs / Cast check'},
   {id:'chestdrain', label:'Chest drain'},
   {id:'artline', label:'Arterial line'},
   {id:'bloodtransfusion', label:'Blood transfusion'},
+  {id:'exfix', label:'External fixator (pin site care)'},
+  {id:'washout', label:'Washout / open wound management'},
 ];
 
 const DEVICES_ANALGESIA = [
@@ -838,12 +985,20 @@ const DEVICES_SYMPTOMS = [
 ];
 
 const MOBILITY = [
-  {id:'independent', label:'Independent / steady'},
-  {id:'zf', label:'Zimmer frame (ZF)'},
-  {id:'pulpit', label:'Pulpit frame'},
-  {id:'sarastedy', label:'Sara Stedy'},
-  {id:'standhoist', label:'Standing hoist'},
-  {id:'fullhoist', label:'Full hoist'},
+  {id:'mobile_indep', label:'Mobile \u2014 Independent'},
+  {id:'mobile_ao1', label:'Mobile \u2014 AO1'},
+  {id:'mobile_ao2', label:'Mobile \u2014 AO2'},
+  {id:'zf_indep', label:'Zimmer frame (ZF) \u2014 Independent'},
+  {id:'zf_ao1', label:'Zimmer frame (ZF) \u2014 AO1'},
+  {id:'zf_ao2', label:'Zimmer frame (ZF) \u2014 AO2'},
+  {id:'pulpit_indep', label:'Pulpit frame \u2014 Independent'},
+  {id:'pulpit_ao1', label:'Pulpit frame \u2014 AO1'},
+  {id:'pulpit_ao2', label:'Pulpit frame \u2014 AO2'},
+  {id:'sarastedy_ao1', label:'Sara Stedy \u2014 AO1'},
+  {id:'sarastedy_ao2', label:'Sara Stedy \u2014 AO2'},
+  {id:'standhoist_ao1', label:'Standing hoist \u2014 AO1'},
+  {id:'standhoist_ao2', label:'Standing hoist \u2014 AO2'},
+  {id:'fullhoist_ao2', label:'Full hoist \u2014 AO2'},
   {id:'bedbound', label:'Bed-bound / not mobilising'},
 ];
 
@@ -868,7 +1023,6 @@ buildPills('devGroupAnalgesia', DEVICES_ANALGESIA, 'dev', renderDeviceSectionsSa
 buildPills('devGroupPathway', DEVICES_PATHWAY, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupCardiac', DEVICES_CARDIAC, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupSymptoms', DEVICES_SYMPTOMS, 'dev', renderDeviceSectionsSafe);
-buildPills('mobGroup', MOBILITY, 'mob');
 function renderDeviceSectionsSafe(){ renderDeviceSections(); }
 
 function setShift(s){
@@ -921,6 +1075,101 @@ function toggleRibReferralSlip(){
   const rev = document.getElementById('ribReferralSlipReveal');
   if(rev) rev.classList.toggle('show', val.startsWith('Step 3'));
 }
+let woundEntryCount = 1;
+function addWoundEntry(){ woundEntryCount++; renderWoundEntries(); }
+function removeWoundEntry(){ if(woundEntryCount>1){ woundEntryCount--; renderWoundEntries(); } }
+function renderWoundEntries(){
+  const container = document.getElementById('woundEntriesContainer');
+  const saved = {};
+  container.querySelectorAll('input, select').forEach(el=>{ saved[el.id] = el.value; });
+  let html = '';
+  for(let i=1;i<=woundEntryCount;i++){
+    html += `<div class="devicecard card" style="margin-bottom:10px;">
+      <div class="row2">
+        <div><label class="field">Site</label><input type="text" id="E_wound_site_${i}" placeholder="e.g. RIF, midline"></div>
+        <div><label class="field">Dressing type</label><select id="E_wound_dressing_${i}">
+          <option value="simple">Simple/dry dressing (e.g. Mepore)</option>
+          <option value="absorbent">Absorbent dressing (e.g. Zetuvit)</option>
+          <option value="foam">Foam dressing (e.g. Mepilex/Allevyn)</option>
+          <option value="hydrocolloid">Hydrocolloid (e.g. DuoDERM)</option>
+          <option value="alginate">Alginate (e.g. Kaltostat)</option>
+          <option value="silver">Antimicrobial/silver dressing (e.g. Aquacel Ag)</option>
+          <option value="vac">VAC/negative pressure dressing</option>
+          <option value="glue">Glue/steri-strips</option>
+          <option value="staples">Staples/clips</option>
+          <option value="none">No dressing / wound exposed</option>
+        </select></div>
+      </div>
+      <div class="row2">
+        <div><label class="field">Condition</label><select id="E_wound_condition_${i}">
+          <option value="intact">Dry and intact, no leakage or oozing</option>
+          <option value="ooze">Slight ooze noted, dressing intact</option>
+          <option value="leaking">Leaking, dressing changed</option>
+          <option value="offensive">Signs of infection/offensive, surgical team aware</option>
+        </select></div>
+        <div><label class="field">Notes (optional)</label><input type="text" id="E_wound_text_${i}" placeholder="anything else"></div>
+      </div>
+    </div>`;
+  }
+  container.innerHTML = html;
+  container.querySelectorAll('input, select').forEach(el=>{ if(saved.hasOwnProperty(el.id)) el.value = saved[el.id]; });
+  const removeBtn = document.getElementById('woundEntryRemoveBtn');
+  if(removeBtn) removeBtn.style.display = woundEntryCount>1 ? 'inline-block' : 'none';
+}
+renderWoundEntries();
+
+let bloodResultEntryCount = 1;
+function addBloodResultEntry(){ bloodResultEntryCount++; renderBloodResultEntries(); }
+function removeBloodResultEntry(){ if(bloodResultEntryCount>1){ bloodResultEntryCount--; renderBloodResultEntries(); } }
+function renderBloodResultEntries(){
+  const container = document.getElementById('bloodResultEntriesContainer');
+  const saved = {};
+  container.querySelectorAll('input, select').forEach(el=>{ saved[el.id] = el.type==='checkbox' ? el.checked : el.value; });
+  let html = '';
+  for(let i=1;i<=bloodResultEntryCount;i++){
+    html += `<div class="devicecard card" style="margin-bottom:10px;">
+      <div class="row2">
+        <div><label class="field">Deranged parameter</label><select id="BR_param_${i}" onchange="toggleOtherField('BR_param_${i}')">
+          <option value="Sodium (Na)">Sodium (Na)</option>
+          <option value="Potassium (K)">Potassium (K)</option>
+          <option value="Magnesium (Mg)">Magnesium (Mg)</option>
+          <option value="Calcium (Ca)">Calcium (Ca)</option>
+          <option value="Phosphate">Phosphate</option>
+          <option value="Haemoglobin (Hb)">Haemoglobin (Hb)</option>
+          <option value="White cell count (WCC)">White cell count (WCC)</option>
+          <option value="CRP">CRP</option>
+          <option value="Platelets">Platelets</option>
+          <option value="Creatinine">Creatinine</option>
+          <option value="Urea">Urea</option>
+          <option value="Bilirubin">Bilirubin</option>
+          <option value="LFTs (ALT/AST)">LFTs (ALT/AST)</option>
+          <option value="INR/Clotting">INR/Clotting</option>
+          <option value="Glucose">Glucose</option>
+          <option value="Lactate">Lactate</option>
+          <option value="Troponin">Troponin</option>
+          <option value="Other (specify)">Other (specify)</option>
+        </select><input type="text" id="BR_param_${i}_other" placeholder="specify parameter..." style="display:none; margin-top:4px;"></div>
+        <div><label class="field">Value/result</label><input type="text" id="BR_value_${i}" placeholder="e.g. 128mmol/L"></div>
+      </div>
+      <div class="hint" style="margin-top:8px;">Reaction/action taken (tick all that apply):</div>
+      <div class="row">
+        <div class="opt"><input type="checkbox" id="BR_electrolyte_${i}"><label>Electrolyte replacement given</label></div>
+        <div class="opt"><input type="checkbox" id="BR_transfusion_${i}"><label>Transfusion given</label></div>
+        <div class="opt"><input type="checkbox" id="BR_antibiotics_${i}"><label>Antibiotics started/reviewed</label></div>
+        <div class="opt"><input type="checkbox" id="BR_fluidbolus_${i}"><label>IV fluid bolus given</label></div>
+        <div class="opt"><input type="checkbox" id="BR_repeat_${i}"><label>Repeat bloods sent</label></div>
+        <div class="opt"><input type="checkbox" id="BR_sho_${i}"><label>Surgical SHO informed</label></div>
+      </div>
+      <input type="text" id="BR_other_${i}" placeholder="other action taken (optional)" style="margin-top:6px;">
+    </div>`;
+  }
+  container.innerHTML = html;
+  container.querySelectorAll('input, select').forEach(el=>{ if(saved.hasOwnProperty(el.id)){ if(el.type==='checkbox') el.checked = saved[el.id]; else el.value = saved[el.id]; } });
+  container.querySelectorAll('select').forEach(el=>{ if(el.id.startsWith('BR_param_') && !el.id.endsWith('_other')) toggleOtherField(el.id); });
+  const removeBtn = document.getElementById('bloodResultRemoveBtn');
+  if(removeBtn) removeBtn.style.display = bloodResultEntryCount>1 ? 'inline-block' : 'none';
+}
+renderBloodResultEntries();
 function updateCiwaScore(){
   const ids = ['ciwa_nausea','ciwa_tremor','ciwa_sweats','ciwa_anxiety','ciwa_agitation','ciwa_tactile','ciwa_auditory','ciwa_visual','ciwa_headache','ciwa_orientation'];
   let total = 0, anyFilled = false;
@@ -946,8 +1195,6 @@ function toggleStomaBristolPopups(){
 function toggleUrineCatheterFields(){
   toggleOtherField('urineMethod');
   const method = getVal('urineMethod');
-  const rev = document.getElementById('urineCatheterReveal');
-  if(rev) rev.classList.toggle('show', method==='idc' || method==='spc');
   const normalRev = document.getElementById('urineNormalMethodReveal');
   if(normalRev) normalRev.classList.toggle('show', method==='normal');
 }
@@ -1234,7 +1481,7 @@ updateGCSTotal();
 
 // ---- Static phrase variant banks ----
 const STATIC_PHRASES = {
-  wash_assisted: ["Assisted patient with wash.", "Provided assistance with personal wash this shift.", "Helped patient complete wash."],
+  wash_assisted: ["Assisted patient with wash.", "Provided assistance with personal wash this shift.", "Helped patient complete wash.", "Supported patient with washing this shift.", "Patient assisted with personal hygiene/wash.", "Wash carried out with staff assistance."],
   wash_independent: ["Patient washed independently, standby assistance offered.", "Patient completed wash unaided; standby support offered.", "Patient managed wash independently, with assistance offered as needed."],
   wash_refused: ["Patient declined assistance with wash.", "Patient chose not to have assistance with wash; dignity and safety needs met.", "Wash assistance offered but declined by patient."],
   wash_handover: ["Wash completed on previous shift / handed over.", "Wash carried out earlier and handed over.", "Personal care completed prior to handover."],
@@ -1278,7 +1525,7 @@ const STATIC_PHRASES = {
   fluid_L4f: ["Patient can have IDDSI Level 4 (Extremely Thick) fluids, thickened as prescribed.", "IDDSI Level 4 (Extremely Thick) fluids given as prescribed, tolerated well.", "Tolerating IDDSI Level 4 (Extremely Thick) thickened fluids, taken by spoon."],
   fluid_nbm: ["Patient is nil by mouth for fluids; confirmed with patient not to have any oral fluid intake.", "No oral fluids permitted; reinforced with patient as part of peri-operative/clinical management.", "Kept nil by mouth for fluids; patient understands and is compliant."],
   urine_normal: ["Passed urine in the toilet, clear and pale yellow, no signs of UTI such as burning or increased frequency.", "Voiding normally in the toilet; urine clear, pale yellow, no dysuria or frequency reported.", "Passing urine without difficulty, clear pale yellow, no signs of urinary tract infection."],
-  footer: ["Call bell within reach. Hand hygiene applied. Safety maintained throughout shift.", "Call bell in reach throughout. Hand hygiene maintained. Patient safety needs met.", "Call bell placed within reach, hand hygiene practised, safety maintained for duration of shift.", "Nil concerns at the time of writing. Call bell within reach, hand hygiene applied."],
+  footer: ["Call bell within reach. Hand hygiene applied. Safety maintained throughout shift.", "Call bell in reach throughout. Hand hygiene maintained. Patient safety needs met.", "Call bell placed within reach, hand hygiene practised, safety maintained for duration of shift.", "Nil concerns at the time of writing. Call bell within reach, hand hygiene applied.", "No concerns to report at present. Call bell kept within reach, hand hygiene maintained throughout.", "Nothing further to escalate at this time. Call bell accessible, hand hygiene upheld throughout shift."],
 };
 
 const OPENING_SPLIT = {
@@ -1286,25 +1533,43 @@ const OPENING_SPLIT = {
     `Taken over from night shift at ${t}. Introduced self to patient and gained consent for all interventions.`,
     `Handover received from night staff at ${t}. Introduced self to patient and consent obtained for care.`,
     `Received handover from night shift at ${t}; patient introduced to self and consent gained for all interventions.`,
-    `At ${t} hrs, care taken over from night staff. Gained consent for all care.`
+    `At ${t} hrs, care taken over from night staff. Gained consent for all care.`,
+    `Assumed care of patient at ${t} following night shift handover. Self introduced, verbal consent obtained for care and treatment.`,
+    `Handover taken from night team at ${t}. Patient made aware of new nurse taking over care; consent confirmed throughout.`,
+    `At ${t}, took over care from the night shift. Patient introduced to myself, consent gained for planned care.`,
+    `Day shift care commenced at ${t} following handover from night staff. Self-introduction made, consent gained throughout.`
   ]),
   night: (t)=> pick([
     `Taken over from day shift at ${t}. Introduced self to patient and gained consent for all interventions.`,
     `Handover received from day staff at ${t}. Introduced self to patient and consent obtained for care.`,
     `Received handover from day shift at ${t}; patient introduced to self and consent gained for all interventions.`,
-    `At ${t} hrs, care taken over from day staff. Gained consent for all care.`
+    `At ${t} hrs, care taken over from day staff. Gained consent for all care.`,
+    `Assumed care of patient at ${t} following day shift handover. Self introduced, verbal consent obtained for care and treatment.`,
+    `Handover taken from day team at ${t}. Patient made aware of new nurse taking over care; consent confirmed throughout.`,
+    `At ${t}, took over care from the day shift. Patient introduced to myself, consent gained for planned care.`,
+    `Night shift care commenced at ${t} following handover from day staff. Self-introduction made, consent gained throughout.`
   ])
 };
 const OPENING_COMBINED = {
   day: (t)=> pick([
     `Taken over from night shift at ${t}. Introduced self to patient and gained consent for all interventions. Administered all prescribed medication.`,
     `Care taken over on day shift at ${t}. Consent gained for all care given. All prescribed medication administered.`,
-    `At ${t} hrs, care taken over from night staff. Gained consent for all care. Administered all prescribed medication.`
+    `At ${t} hrs, care taken over from night staff. Gained consent for all care. Administered all prescribed medication.`,
+    `Assumed care of patient at ${t} following night shift handover. Self introduced, verbal consent obtained for care and treatment. Prescribed medications given as charted.`,
+    `Handover taken from night team at ${t}. Patient made aware of new nurse taking over care; consent confirmed throughout. All charted medication given.`,
+    `At ${t}, took over care from the night shift. Patient introduced to myself, consent gained for planned care. Medications administered as prescribed.`,
+    `Day shift care commenced at ${t} following handover from night staff. Self-introduction made, consent gained throughout. All prescribed medications given.`,
+    `Received handover and took over patient care at ${t}. Consent obtained for all aspects of care. Prescribed medication administered in full.`
   ]),
   night: (t)=> pick([
     `Taken over from day shift at ${t}. Introduced self to patient and gained consent for all interventions. Administered all prescribed medication.`,
     `Care taken over on night shift at ${t}. Consent gained for all care given. All prescribed medication administered.`,
-    `At ${t} hrs, care taken over from day staff. Gained consent for all care. Administered all prescribed medication.`
+    `At ${t} hrs, care taken over from day staff. Gained consent for all care. Administered all prescribed medication.`,
+    `Assumed care of patient at ${t} following day shift handover. Self introduced, verbal consent obtained for care and treatment. Prescribed medications given as charted.`,
+    `Handover taken from day team at ${t}. Patient made aware of new nurse taking over care; consent confirmed throughout. All charted medication given.`,
+    `At ${t}, took over care from the day shift. Patient introduced to myself, consent gained for planned care. Medications administered as prescribed.`,
+    `Night shift care commenced at ${t} following handover from day staff. Self-introduction made, consent gained throughout. All prescribed medications given.`,
+    `Received handover and took over patient care at ${t}. Consent obtained for all aspects of care. Prescribed medication administered in full.`
   ])
 };
 
@@ -1342,7 +1607,7 @@ function varyHR(hr){
   const s=scoreHR(hr), v=parseFloat(hr);
   if(s===0) return pick([`Heart rate ${hr} bpm, regular rhythm.`, `HR ${hr} bpm, regular in rhythm.`, `Pulse ${hr} bpm, regular and well sustained.`]);
   const dir = v<51 ? 'bradycardic':'tachycardic';
-  return pick([`Heart rate ${hr} bpm, ${dir}; surgical team aware, monitored closely.`, `HR ${hr} bpm (${dir}); noted and escalated as appropriate.`]);
+  return pick([`Heart rate ${hr} bpm, ${dir}; surgical team aware, monitored closely.`, `HR ${hr} bpm (${dir}); outside normal parameters, surgical team informed.`]);
 }
 function varyBP(sys,dia){
   const combined = (sys||'[X]') + '/' + (dia||'[X]');
@@ -1350,14 +1615,14 @@ function varyBP(sys,dia){
   const s=scoreBP(sys), v=parseFloat(sys);
   if(s===0) return pick([`Blood pressure ${combined} mmHg, within normal limits.`, `BP ${combined} mmHg, within normal range.`, `Blood pressure recorded at ${combined} mmHg, normotensive.`]);
   const dir = v<111 ? 'hypotensive':'hypertensive';
-  return pick([`Blood pressure ${combined} mmHg, ${dir}; surgical team aware, monitored closely.`, `BP ${combined} mmHg (${dir}); noted, escalation considered as appropriate.`]);
+  return pick([`Blood pressure ${combined} mmHg, ${dir}; surgical team aware, monitored closely.`, `BP ${combined} mmHg (${dir}); outside normal parameters, surgical team informed.`]);
 }
 function varyTemp(temp){
   if(temp==='') return `Temperature [X]\u00b0C recorded.`;
   const s=scoreTemp(temp), v=parseFloat(temp);
   if(s===0) return pick([`Temperature ${temp}\u00b0C, within normal range.`, `Temp ${temp}\u00b0C, afebrile.`, `Recorded temperature ${temp}\u00b0C, normal range.`]);
   const dir = v<36.1 ? 'hypothermic':'pyrexial';
-  return pick([`Temperature ${temp}\u00b0C, ${dir}; surgical team aware, monitored closely.`, `Temp ${temp}\u00b0C (${dir}); noted and escalated as appropriate.`]);
+  return pick([`Temperature ${temp}\u00b0C, ${dir}; surgical team aware, monitored closely.`, `Temp ${temp}\u00b0C (${dir}); outside normal parameters, surgical team informed.`]);
 }
 
 function getAllNewsReadings(){
@@ -1458,12 +1723,20 @@ function varyBM(bm){
 }
 
 const MOBILITY_PHRASES = {
-  independent: ["Mobilising independently and steady on feet, no falls concerns noted.", "Steady and independent with mobility, no aids required.", "Mobilises unaided, gait steady, no concerns."],
-  zf: ["Mobilising with a Zimmer frame, steady with supervision.", "Uses Zimmer frame (ZF) to mobilise, stable with staff nearby.", "Zimmer frame in use for mobility, tolerating well."],
-  pulpit: ["Mobilising with a pulpit frame, tolerating weight-bearing through forearms.", "Uses pulpit frame for mobility support.", "Pulpit frame in use, mobilising a short distance with this aid."],
-  sarastedy: ["Transferred using a Sara Stedy with staff assisting, tolerated well.", "Used Sara Stedy standing/turning aid for transfer; patient weight-bearing and stable throughout.", "Mobilised/transferred via Sara Stedy, tolerated well with staff support."],
-  standhoist: ["Transferred using a standing hoist with two staff assisting.", "Standing hoist used for transfers, tolerated well.", "Uses standing hoist for bed-chair transfers."],
-  fullhoist: ["All transfers via full hoist with two staff assisting.", "Hoist transfer used for all moves, tolerated well, no distress noted.", "Full hoist required for transfers; skin checked post-transfer."],
+  mobile_indep: ["Mobilising independently and steady on feet, no aids or assistance required.", "Steady and independent with mobility, no falls concerns noted.", "Mobilises unaided, gait steady, no concerns."],
+  mobile_ao1: ["Mobilising with the assistance of 1 (AO1), steady throughout.", "Requires assistance of 1 staff member to mobilise safely, no aid used; tolerated well.", "Mobilised with AO1 support, no walking aid needed, stable throughout."],
+  mobile_ao2: ["Mobilising with the assistance of 2 (AO2), steady throughout.", "Requires assistance of 2 staff members to mobilise safely, no aid used; tolerated well.", "Mobilised with AO2 support, no walking aid needed, stable throughout."],
+  zf_indep: ["Mobilising independently with a Zimmer frame, steady throughout.", "Independent with Zimmer frame (ZF), no staff assistance required.", "Uses Zimmer frame to mobilise independently, safe and steady."],
+  zf_ao1: ["Mobilising with a Zimmer frame and assistance of 1 (AO1), steady throughout.", "Uses Zimmer frame (ZF) with AO1 support, stable throughout.", "Zimmer frame in use with assistance of 1, tolerating well."],
+  zf_ao2: ["Mobilising with a Zimmer frame and assistance of 2 (AO2), steady throughout.", "Uses Zimmer frame (ZF) with AO2 support, stable throughout.", "Zimmer frame in use with assistance of 2, tolerating well."],
+  pulpit_indep: ["Mobilising independently with a pulpit frame, tolerating weight-bearing through forearms.", "Independent with pulpit frame, no staff assistance required.", "Uses pulpit frame to mobilise independently."],
+  pulpit_ao1: ["Mobilising with a pulpit frame and assistance of 1 (AO1).", "Uses pulpit frame with AO1 support, tolerating weight-bearing through forearms.", "Pulpit frame in use with assistance of 1."],
+  pulpit_ao2: ["Mobilising with a pulpit frame and assistance of 2 (AO2).", "Uses pulpit frame with AO2 support, tolerating weight-bearing through forearms.", "Pulpit frame in use with assistance of 2."],
+  sarastedy_ao1: ["Transferred using a Sara Stedy with assistance of 1 (AO1), tolerated well.", "Used Sara Stedy standing/turning aid for transfer with 1 staff member assisting; weight-bearing and stable throughout.", "Mobilised/transferred via Sara Stedy with AO1 support, tolerated well."],
+  sarastedy_ao2: ["Transferred using a Sara Stedy with assistance of 2 (AO2), tolerated well.", "Used Sara Stedy standing/turning aid for transfer with 2 staff members assisting; weight-bearing and stable throughout.", "Mobilised/transferred via Sara Stedy with AO2 support, tolerated well."],
+  standhoist_ao1: ["Transferred using a standing hoist with assistance of 1 (AO1), tolerated well.", "Standing hoist used for transfer with 1 staff member assisting.", "Uses standing hoist for bed-chair transfers with AO1 support."],
+  standhoist_ao2: ["Transferred using a standing hoist with assistance of 2 (AO2), tolerated well.", "Standing hoist used for transfer with 2 staff members assisting.", "Uses standing hoist for bed-chair transfers with AO2 support."],
+  fullhoist_ao2: ["All transfers via full hoist with assistance of 2 (AO2).", "Hoist transfer used for all moves with 2 staff members assisting, tolerated well, no distress noted.", "Full hoist required for transfers with AO2 support; skin checked post-transfer."],
   bedbound: ["Remains nursed in bed this shift; passive limb exercises and repositioning carried out.", "Bed-bound at present; turned and repositioned regularly, pressure areas checked.", "Unable to mobilise this shift; repositioned as per turning chart."]
 };
 
@@ -1869,6 +2142,55 @@ const DEVICE_TEMPLATES = {
         `Transfusing ${units} ${product}, ${rate}. ${reactionTxt}`
       ]); }
   },
+  exfix: {
+    title:'External fixator (pin site care)',
+    fields:[
+      {id:'exfix_site', label:'Limb/frame location', type:'text', placeholder:'e.g. right tibia frame'},
+      {id:'exfix_pins', label:'Number of pin sites', type:'text', placeholder:'e.g. 6'},
+      {id:'exfix_appearance', label:'Pin site appearance', type:'select', options:['Clean, dry, no signs of infection','Red/inflamed','Discharge present','Loose pin']},
+      {id:'exfix_cleaning', label:'Pin site care given', type:'select', options:['Yes, as per protocol','Not due this shift']},
+      {id:'exfix_frame_stable', label:'Frame stability', type:'select', options:['Stable, no loose connections','Loose connection noted']},
+    ],
+    build:(f)=>{
+      const site=f.exfix_site||'[location]', pins=f.exfix_pins||'[X]', appearance=f.exfix_appearance||'Clean, dry, no signs of infection';
+      const cleaning=f.exfix_cleaning||'Yes, as per protocol', stable=f.exfix_frame_stable||'Stable, no loose connections';
+      let base = pick([
+        `External fixator frame in situ at ${site}, ${pins} pin sites checked. Pin sites: ${appearance.toLowerCase()}. Pin site care: ${cleaning.toLowerCase()}. Frame: ${stable.toLowerCase()}.`,
+        `Ex-fix frame at ${site} remains in situ, ${pins} pin sites reviewed. Sites ${appearance.toLowerCase()}, care ${cleaning.toLowerCase()}. Frame ${stable.toLowerCase()}.`
+      ]);
+      if(appearance==='Red/inflamed' || appearance==='Discharge present' || appearance==='Loose pin'){
+        base += ' Pin site concern noted \u2014 surgical SHO/orthopaedic team informed, wound swab considered.';
+      }
+      if(stable==='Loose connection noted'){
+        base += ' Frame instability noted \u2014 surgical SHO/orthopaedic team informed urgently, limb supported and immobilised pending review.';
+      }
+      return base;
+    }
+  },
+  washout: {
+    title:'Washout / open wound management',
+    fields:[
+      {id:'wo_site', label:'Site', type:'text', placeholder:'e.g. left knee joint / right lower leg wound'},
+      {id:'wo_indication', label:'Indication', type:'select', options:['Open fracture','Septic joint','Infected wound','Contaminated traumatic wound']},
+      {id:'wo_dressing', label:'Current dressing/management', type:'select_other', options:['Simple dressing','VAC (negative pressure) dressing','Packed, dressing on top','Left open, dressing only']},
+      {id:'wo_drain', label:'Drain in situ from washout', type:'select', options:['No','Yes (see Wound drain device)']},
+      {id:'wo_planned', label:'Planned further washout/return to theatre', type:'select', options:['None planned','Planned \u2014 see plan below']},
+      {id:'wo_plan_detail', label:'Plan detail (if applicable)', type:'text', placeholder:'e.g. back to theatre in 48hrs for second-look washout'},
+    ],
+    build:(f)=>{
+      const site=f.wo_site||'[site]', indication=f.wo_indication||'[indication]', dressing=f.wo_dressing||'[dressing]';
+      const drain=f.wo_drain||'No', planned=f.wo_planned||'None planned', planDetail=f.wo_plan_detail;
+      let base = pick([
+        `Post-washout wound at ${site} (indication: ${indication.toLowerCase()}). Currently managed with ${dressing.toLowerCase()}.`,
+        `Wound at ${site} following washout for ${indication.toLowerCase()}; ${dressing.toLowerCase()} in place.`
+      ]);
+      if(drain.startsWith('Yes')) base += ' Drain in situ from washout \u2014 see Wound drain device for output.';
+      if(planned.startsWith('Planned')){
+        base += ` Further washout/return to theatre planned${planDetail?': '+planDetail:''}.`;
+      }
+      return base;
+    }
+  },
   sorethroat: {
     title:'Sore throat',
     fields:[
@@ -2108,13 +2430,42 @@ const DEVICE_TEMPLATES = {
     multi:true,
   },
   plaster: {
-    title:'Plaster/fixation',
-    fields:[{id:'plaster_side', label:'Side/area', type:'text', placeholder:'e.g. right foot'}],
-    build:(f)=>{ const side=f.plaster_side||'[side/area]';
-      return pick([
-        `Fixation/plaster in situ on ${side}. Neurovascular status intact distally, no signs of compartment syndrome.`,
-        `Plaster/fixation remains on ${side}; neurovascular status intact distally, no compartment syndrome signs.`
-      ]); }
+    title:'Neurovascular obs / Cast check',
+    fields:[
+      {id:'nv_limb', label:'Limb', type:'select', options:['Left arm','Right arm','Left leg','Right leg']},
+      {id:'nv_cast', label:'Cast/splint in situ', type:'select', options:['None','Full cast','Backslab','Splint','External fixator (see separate device)']},
+      {id:'nv_cast_condition', label:'Cast condition (if applicable)', type:'select', options:['Intact','Cracked/damaged','Too tight','Soiled']},
+      {id:'nv_wb', label:'Weight-bearing status', type:'select', options:['N/A','Non-weight bearing (NWB)','Partial weight bearing (PWB)','Weight bearing as tolerated (WBAT)','Full weight bearing (FWB)']},
+      {id:'nv_colour', label:'Colour', type:'select', options:['Normal/pink','Pale','Cyanosed','Mottled']},
+      {id:'nv_warmth', label:'Warmth', type:'select', options:['Warm','Cool','Cold']},
+      {id:'nv_crt', label:'Capillary refill', type:'select', options:['<2 seconds','>2 seconds']},
+      {id:'nv_pulses', label:'Distal pulses', type:'select', options:['Present and strong','Present but weak','Absent (Doppler required)']},
+      {id:'nv_sensation', label:'Sensation', type:'select', options:['Normal','Reduced/pins and needles','Absent']},
+      {id:'nv_movement', label:'Movement', type:'select', options:['Normal/full range','Reduced','Unable to move']},
+      {id:'nv_pain', label:'Pain', type:'select', options:['Proportionate to injury, well controlled','Severe/disproportionate to injury','Pain on passive stretch']},
+      {id:'nv_swelling', label:'Swelling', type:'select', options:['None/mild','Moderate','Severe/tense']},
+    ],
+    build:(f)=>{
+      const limb=f.nv_limb||'[limb]', cast=f.nv_cast||'None', castCond=f.nv_cast_condition, wb=f.nv_wb;
+      const colour=f.nv_colour||'Normal/pink', warmth=f.nv_warmth||'Warm', crt=f.nv_crt||'<2 seconds';
+      const pulses=f.nv_pulses||'Present and strong', sensation=f.nv_sensation||'Normal', movement=f.nv_movement||'Normal/full range';
+      const pain=f.nv_pain||'Proportionate to injury, well controlled', swelling=f.nv_swelling||'None/mild';
+
+      let base = `${limb}: `;
+      if(cast!=='None') base += `${cast} in situ${castCond?', '+castCond.toLowerCase():''}. `;
+      base += `Colour ${colour.toLowerCase()}, ${warmth.toLowerCase()} to touch, CRT ${crt}. Distal pulses: ${pulses.toLowerCase()}. Sensation ${sensation.toLowerCase()}. Movement ${movement.toLowerCase()}. Pain: ${pain.toLowerCase()}. Swelling: ${swelling.toLowerCase()}.`;
+      if(wb && wb!=='N/A') base += ` Weight-bearing status: ${wb}.`;
+
+      const concern = pulses==='Absent (Doppler required)' || sensation==='Absent' || movement==='Unable to move' ||
+        pain==='Pain on passive stretch' || pain==='Severe/disproportionate to injury' ||
+        colour==='Pale' || colour==='Cyanosed' || colour==='Mottled' || swelling==='Severe/tense' || crt==='>2 seconds';
+      if(concern){
+        base += ' \u26a0 Signs concerning for neurovascular compromise/compartment syndrome \u2014 surgical SHO informed urgently, limb elevated, analgesia reviewed, hourly neurovascular observations continued.';
+      } else if(cast!=='None' && castCond && castCond!=='Intact'){
+        base += ` Cast ${castCond.toLowerCase()} \u2014 surgical team informed, reviewed.`;
+      }
+      return base;
+    }
   },
 };
 
@@ -2128,7 +2479,10 @@ function removePvdEntry(){ if(pvdEntryCount>1){ pvdEntryCount--; renderDeviceSec
 function renderDeviceSections(){
   const container = document.getElementById('deviceSections');
   const saved = {};
-  container.querySelectorAll('input, select').forEach(el=>{ saved[el.id] = el.type==='checkbox' ? el.checked : el.value; });
+  container.querySelectorAll('input, select').forEach(el=>{
+    if(el.tagName==='SELECT' && el.multiple) saved[el.id] = Array.from(el.selectedOptions).map(o=>o.value);
+    else saved[el.id] = el.type==='checkbox' ? el.checked : el.value;
+  });
   const checked = Array.from(document.querySelectorAll('[id^="dev_"] input:checked')).map(i=>i.value);
   container.innerHTML='';
   checked.forEach(devId=>{
@@ -2163,35 +2517,38 @@ function renderDeviceSections(){
     } else if(devId==='ivabx'){
       card.innerHTML = `<h2>IV/PO Antibiotics</h2>
         <div class="opt"><input type="checkbox" id="abx_amg_chk" onchange="toggleAMG()"><label>AMG (Amoxicillin + Metronidazole + Gentamicin triple therapy)</label></div>
-        <div class="hint">IV antibiotics (tick all that apply)</div>
-        <div class="row">
-          <div class="opt"><input type="checkbox" class="abxIV" id="abx_iv_tazo" value="Tazocin" onchange="updateAbxLevel()"><label>Tazocin</label></div>
-          <div class="opt"><input type="checkbox" class="abxIV" id="abx_iv_mero" value="Meropenem" onchange="updateAbxLevel()"><label>Meropenem</label></div>
-          <div class="opt"><input type="checkbox" class="abxIV" id="abx_iv_gent" value="Gentamicin" onchange="updateAbxLevel()"><label>Gentamicin</label></div>
-          <div class="opt"><input type="checkbox" class="abxIV" id="abx_iv_vanc" value="Vancomycin" onchange="updateAbxLevel()"><label>Vancomycin</label></div>
-          <div class="opt"><input type="checkbox" class="abxIV" id="abx_iv_metro" value="Metronidazole" onchange="updateAbxLevel()"><label>Metronidazole</label></div>
-          <div class="opt"><input type="checkbox" class="abxIV" id="abx_iv_amox" value="Amoxicillin" onchange="updateAbxLevel()"><label>Amoxicillin</label></div>
-          <div class="opt"><input type="checkbox" class="abxIV" id="abx_iv_cotrim" value="Co-trimoxazole" onchange="updateAbxLevel()"><label>Co-trimoxazole</label></div>
-          <div class="opt"><input type="checkbox" class="abxIV" id="abx_iv_fluclox" value="Flucloxacillin" onchange="updateAbxLevel()"><label>Flucloxacillin</label></div>
-          <div class="opt"><input type="checkbox" class="abxIV" id="abx_iv_coamox" value="Co-amoxiclav" onchange="updateAbxLevel()"><label>Co-amoxiclav</label></div>
-          <div class="opt"><input type="checkbox" class="abxIV" id="abx_iv_cefur" value="Cefuroxime" onchange="updateAbxLevel()"><label>Cefuroxime</label></div>
-          <div class="opt"><input type="checkbox" class="abxIV" id="abx_iv_ceftri" value="Ceftriaxone" onchange="updateAbxLevel()"><label>Ceftriaxone</label></div>
-          <div class="opt"><input type="checkbox" class="abxIV" id="abx_iv_teico" value="Teicoplanin" onchange="updateAbxLevel()"><label>Teicoplanin</label></div>
-          <div class="opt"><input type="checkbox" class="abxIV" id="abx_iv_cipro" value="Ciprofloxacin" onchange="updateAbxLevel()"><label>Ciprofloxacin</label></div>
-        </div>
-        <div class="hint">PO antibiotics (tick all that apply)</div>
-        <div class="row">
-          <div class="opt"><input type="checkbox" class="abxPO" id="abx_po_coamox" value="Co-amoxiclav"><label>Co-amoxiclav</label></div>
-          <div class="opt"><input type="checkbox" class="abxPO" id="abx_po_fluclox" value="Flucloxacillin"><label>Flucloxacillin</label></div>
-          <div class="opt"><input type="checkbox" class="abxPO" id="abx_po_amox" value="Amoxicillin"><label>Amoxicillin</label></div>
-          <div class="opt"><input type="checkbox" class="abxPO" id="abx_po_metro" value="Metronidazole"><label>Metronidazole</label></div>
-          <div class="opt"><input type="checkbox" class="abxPO" id="abx_po_cipro" value="Ciprofloxacin"><label>Ciprofloxacin</label></div>
-          <div class="opt"><input type="checkbox" class="abxPO" id="abx_po_doxy" value="Doxycycline"><label>Doxycycline</label></div>
-          <div class="opt"><input type="checkbox" class="abxPO" id="abx_po_trim" value="Trimethoprim"><label>Trimethoprim</label></div>
-          <div class="opt"><input type="checkbox" class="abxPO" id="abx_po_cefal" value="Cefalexin"><label>Cefalexin</label></div>
-          <div class="opt"><input type="checkbox" class="abxPO" id="abx_po_clinda" value="Clindamycin"><label>Clindamycin</label></div>
-          <div class="opt"><input type="checkbox" class="abxPO" id="abx_po_cotrim" value="Co-trimoxazole"><label>Co-trimoxazole</label></div>
-        </div>
+        <label class="field">IV antibiotics (ctrl/cmd-click, or tap+drag on mobile, to select multiple)</label>
+        <select id="abx_iv_select" class="abxIVSelect" multiple size="8" onchange="updateAbxLevel()" style="width:100%;">
+          <option value="Tazocin">Tazocin</option>
+          <option value="Meropenem">Meropenem</option>
+          <option value="Gentamicin">Gentamicin</option>
+          <option value="Vancomycin">Vancomycin</option>
+          <option value="Metronidazole">Metronidazole</option>
+          <option value="Amoxicillin">Amoxicillin</option>
+          <option value="Co-trimoxazole">Co-trimoxazole</option>
+          <option value="Flucloxacillin">Flucloxacillin</option>
+          <option value="Co-amoxiclav">Co-amoxiclav</option>
+          <option value="Cefuroxime">Cefuroxime</option>
+          <option value="Ceftriaxone">Ceftriaxone</option>
+          <option value="Teicoplanin">Teicoplanin</option>
+          <option value="Ciprofloxacin">Ciprofloxacin</option>
+          <option value="Clindamycin">Clindamycin</option>
+          <option value="Levofloxacin">Levofloxacin</option>
+        </select>
+        <label class="field" style="margin-top:10px;">PO antibiotics (ctrl/cmd-click, or tap+drag on mobile, to select multiple)</label>
+        <select id="abx_po_select" class="abxPOSelect" multiple size="7" style="width:100%;">
+          <option value="Co-amoxiclav">Co-amoxiclav</option>
+          <option value="Flucloxacillin">Flucloxacillin</option>
+          <option value="Amoxicillin">Amoxicillin</option>
+          <option value="Metronidazole">Metronidazole</option>
+          <option value="Ciprofloxacin">Ciprofloxacin</option>
+          <option value="Doxycycline">Doxycycline</option>
+          <option value="Trimethoprim">Trimethoprim</option>
+          <option value="Cefalexin">Cefalexin</option>
+          <option value="Clindamycin">Clindamycin</option>
+          <option value="Co-trimoxazole">Co-trimoxazole</option>
+          <option value="Levofloxacin">Levofloxacin</option>
+        </select>
         <div class="reveal" id="abx_gent_wrap">
           <label class="field">Gentamicin trough level (mg/L)</label>
           <input type="text" id="abx_gent_level" oninput="updateAbxLevel()" placeholder="e.g. 0.8">
@@ -2270,7 +2627,12 @@ function renderDeviceSections(){
     }
     container.appendChild(card);
   });
-  container.querySelectorAll('input, select').forEach(el=>{ if(saved.hasOwnProperty(el.id)){ if(el.type==='checkbox') el.checked = saved[el.id]; else el.value = saved[el.id]; } });
+  container.querySelectorAll('input, select').forEach(el=>{
+    if(!saved.hasOwnProperty(el.id)) return;
+    if(el.tagName==='SELECT' && el.multiple){ const vals = saved[el.id]; Array.from(el.options).forEach(o=>{ o.selected = vals.includes(o.value); }); }
+    else if(el.type==='checkbox') el.checked = saved[el.id];
+    else el.value = saved[el.id];
+  });
   checked.forEach(devId=>{
     const t = DEVICE_TEMPLATES[devId];
     if(t && t.gasPrefix) updateGasInterp(t.gasPrefix);
@@ -2284,17 +2646,20 @@ function renderDeviceSections(){
 
 function toggleAMG(){
   const amg = document.getElementById('abx_amg_chk').checked;
-  if(amg){
-    const amox = document.getElementById('abx_iv_amox'), metro = document.getElementById('abx_iv_metro'), gent = document.getElementById('abx_iv_gent');
-    if(amox) amox.checked = true;
-    if(metro) metro.checked = true;
-    if(gent) gent.checked = true;
+  const sel = document.getElementById('abx_iv_select');
+  if(amg && sel){
+    ['Amoxicillin','Metronidazole','Gentamicin'].forEach(drug=>{
+      const opt = Array.from(sel.options).find(o=>o.value===drug);
+      if(opt) opt.selected = true;
+    });
   }
   updateAbxLevel();
 }
 function updateAbxLevel(){
-  const gentTicked = document.getElementById('abx_iv_gent')?.checked;
-  const vancTicked = document.getElementById('abx_iv_vanc')?.checked;
+  const sel = document.getElementById('abx_iv_select');
+  const selectedIV = sel ? Array.from(sel.selectedOptions).map(o=>o.value) : [];
+  const gentTicked = selectedIV.includes('Gentamicin');
+  const vancTicked = selectedIV.includes('Vancomycin');
   const gentWrap = document.getElementById('abx_gent_wrap');
   const vancWrap = document.getElementById('abx_vanc_wrap');
   if(gentWrap) gentWrap.classList.toggle('show', !!gentTicked);
@@ -2331,8 +2696,9 @@ function updateAbxLevel(){
   }
 }
 function buildAbxText(){
-  const ivDrugs = Array.from(document.querySelectorAll('.abxIV:checked')).map(el=>el.value);
-  const poDrugs = Array.from(document.querySelectorAll('.abxPO:checked')).map(el=>el.value);
+  const ivSel = document.getElementById('abx_iv_select'), poSel = document.getElementById('abx_po_select');
+  const ivDrugs = ivSel ? Array.from(ivSel.selectedOptions).map(o=>o.value) : [];
+  const poDrugs = poSel ? Array.from(poSel.selectedOptions).map(o=>o.value) : [];
   const lines = [];
   if(ivDrugs.length) lines.push(pick([`IV ${ivDrugs.join(', ')} administered as prescribed, regularly, with no adverse reaction noted.`, `IV ${ivDrugs.join(', ')} given as charted, no adverse reaction observed.`]));
   if(poDrugs.length) lines.push(pick([`PO ${poDrugs.join(', ')} administered as prescribed, regularly, with no adverse reaction noted.`, `PO ${poDrugs.join(', ')} given as charted, no adverse reaction observed.`]));
@@ -2611,25 +2977,29 @@ function buildNoteText(){
     lines.push(pick([`TEDs removed due to ${reason}; skin monitored closely.`, `TEDs discontinued \u2014 ${reason} \u2014 pressure areas and skin integrity monitored closely.`]));
   }
   if(document.getElementById('E_wound_chk').checked){
-    const site = getVal('E_wound_site')||'[site]';
     const dressingMap = {
       simple:'a simple/dry dressing', absorbent:'an absorbent dressing', foam:'a foam dressing',
       hydrocolloid:'a hydrocolloid dressing', alginate:'an alginate dressing', silver:'an antimicrobial/silver dressing',
       vac:'a VAC/negative pressure dressing', glue:'glue/steri-strips', staples:'staples/clips', none:'no dressing (wound exposed)'
     };
-    const dressing = dressingMap[getVal('E_wound_dressing')] || 'a dressing';
     const conditionMap = {
       intact:'dry and intact, no leakage or oozing', ooze:'slight ooze noted, dressing intact',
       leaking:'leaking, dressing changed', offensive:'showing signs of infection/offensive odour, surgical team aware'
     };
-    const condition = conditionMap[getVal('E_wound_condition')] || 'dry and intact';
-    const notes = getVal('E_wound_text');
-    let line = pick([
-      `Wound at ${site} covered with ${dressing}, ${condition}.`,
-      `${site} wound dressed with ${dressing}; ${condition}.`
-    ]);
-    if(notes) line += ` ${notes}.`;
-    lines.push(line);
+    for(let i=1;i<=woundEntryCount;i++){
+      const site = getVal('E_wound_site_'+i);
+      const notes = getVal('E_wound_text_'+i);
+      if(!site && !notes) continue;
+      const siteTxt = site || '[site]';
+      const dressing = dressingMap[getVal('E_wound_dressing_'+i)] || 'a dressing';
+      const condition = conditionMap[getVal('E_wound_condition_'+i)] || 'dry and intact';
+      let line = pick([
+        `Wound at ${siteTxt} covered with ${dressing}, ${condition}.`,
+        `${siteTxt} wound dressed with ${dressing}; ${condition}.`
+      ]);
+      if(notes) line += ` ${notes}.`;
+      lines.push(line);
+    }
   }
   if(newsEntryCount>0){
     const ss6Ids = ['ss6_o2','ss6_fluids','ss6_abx','ss6_cultures','ss6_lactate','ss6_urine'];
@@ -2671,10 +3041,10 @@ function buildNoteText(){
   }
   lines.push('');
 
-  const mobChecked = Array.from(document.querySelectorAll('#mobGroup input:checked')).map(i=>i.value);
-  if(mobChecked.length){
+  const mobSelected = getVal('mobilitySelect');
+  if(mobSelected && MOBILITY_PHRASES[mobSelected]){
     lines.push('Mobility:');
-    mobChecked.forEach(m=> lines.push(pick(MOBILITY_PHRASES[m])));
+    lines.push(pick(MOBILITY_PHRASES[mobSelected]));
     lines.push('');
   }
 
@@ -2709,15 +3079,9 @@ function buildNoteText(){
     } else {
       const methodLabels = {idc:'Indwelling urethral catheter (IDC/Foley)', spc:'Suprapubic catheter (SPC)', isc:'Intermittent catheterisation (ISC)', condom:'Condom/external catheter', nephrostomy:'Nephrostomy tube', urostomy:'Urostomy (ileal conduit)'};
       const label = methodLabels[method] || 'Urinary catheter';
-      let detail = '';
-      if(method==='idc' || method==='spc'){
-        const type = getVal('urineCatheterType'), days = getVal('urineCatheterDays');
-        if(type) detail += ` (${type})`;
-        if(days) detail += ` day ${days}`;
-      }
       ubLines.push(pick([
-        `${label}${detail} in situ, draining ${stateTxt}. Tubing patent, bag positioned appropriately, insertion site clean.`,
-        `${label}${detail} remains in situ, output ${stateTxt}. No concerns with tubing or insertion site.`
+        `${label} in situ, draining ${stateTxt}. Tubing patent, bag positioned appropriately, insertion site clean.`,
+        `${label} remains in situ, output ${stateTxt}. No concerns with tubing or insertion site.`
       ]));
     }
     if(document.getElementById('urineDipChk').checked){
@@ -2766,6 +3130,34 @@ function buildNoteText(){
       else if(t){ lines.push(t); }
     });
     lines.push('');
+  }
+
+  if(document.getElementById('BR_chk').checked){
+    const brLines = [];
+    for(let i=1;i<=bloodResultEntryCount;i++){
+      const value = getVal('BR_value_'+i);
+      if(!value) continue;
+      let param = getVal('BR_param_'+i);
+      if(param==='Other (specify)') param = getVal('BR_param_'+i+'_other')||'[parameter]';
+      const result = `${param} ${value}`;
+      const actions = [];
+      if(document.getElementById('BR_electrolyte_'+i).checked) actions.push('electrolyte replacement given');
+      if(document.getElementById('BR_transfusion_'+i).checked) actions.push('transfusion given');
+      if(document.getElementById('BR_antibiotics_'+i).checked) actions.push('antibiotics started/reviewed');
+      if(document.getElementById('BR_fluidbolus_'+i).checked) actions.push('IV fluid bolus given');
+      if(document.getElementById('BR_repeat_'+i).checked) actions.push('repeat bloods sent');
+      if(document.getElementById('BR_sho_'+i).checked) actions.push('surgical SHO informed');
+      const other = getVal('BR_other_'+i);
+      if(other) actions.push(other);
+      let line = `${result}.`;
+      line += actions.length ? ` ${capitalize(actions.join(', '))}.` : ' Surgical team aware.';
+      brLines.push(line);
+    }
+    if(brLines.length){
+      lines.push('Blood results:');
+      brLines.forEach(l=>lines.push(l));
+      lines.push('');
+    }
   }
 
   if(document.getElementById('FB_chk').checked){
@@ -2877,14 +3269,160 @@ function generateNote(){
 
 function resetForm(){
   if(confirm('Reset all entries and start a new patient? This clears everything currently entered.')){
+    try{ localStorage.removeItem(DRAFT_KEY); }catch(e){}
     location.reload();
   }
 }
 function copyNote(){
   const ta = document.getElementById('noteOut');
-  ta.select();
-  document.execCommand('copy');
+  if(!ta.value.trim()) generateNote();
+  const btn = document.getElementById('copyBtn');
+  const flash = ()=>{
+    if(!btn) return;
+    const original = 'Copy to clipboard';
+    btn.textContent = '\u2713 Copied';
+    setTimeout(()=>{ btn.textContent = original; }, 1600);
+  };
+  const fallback = ()=>{ ta.select(); document.execCommand('copy'); flash(); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(ta.value).then(flash).catch(fallback);
+  } else { fallback(); }
 }
+
+function jumpAndGenerate(){
+  goToStep(TOTAL_STEPS);
+  generateNote();
+  const out = document.getElementById('noteOut');
+  if(out) out.focus({preventScroll:true});
+}
+
+/* ---- Step bar state: which steps have data, where you are ---- */
+function captureBaseline(root){
+  (root||document).querySelectorAll('input, select, textarea').forEach(el=>{
+    if(el.dataset.swnbDefault === undefined) el.dataset.swnbDefault = el.value;
+  });
+}
+function stepHasData(n){
+  const step = document.querySelector('.step[data-step="'+n+'"]');
+  if(!step) return false;
+  captureBaseline(step);
+  return Array.from(step.querySelectorAll('input, select, textarea')).some(el=>{
+    if(el.id==='noteOut') return false;
+    if(el.type==='checkbox' || el.type==='radio') return el.checked !== el.defaultChecked;
+    return el.value !== el.dataset.swnbDefault;
+  });
+}
+function refreshStepBar(){
+  captureBaseline();
+  document.querySelectorAll('.stepdot').forEach(dot=>{
+    dot.classList.toggle('filled', stepHasData(parseInt(dot.dataset.stepdot)));
+  });
+  const label = document.getElementById('abStepLabel');
+  const dot = document.querySelector('.stepdot[data-stepdot="'+currentStep+'"] .stepdot-label');
+  if(label) label.textContent = 'Step '+currentStep+' of '+TOTAL_STEPS+(dot? ' \u00b7 '+dot.textContent : '');
+  const back = document.getElementById('abBack'), next = document.getElementById('abNext');
+  if(back) back.disabled = currentStep<=1;
+  if(next) next.disabled = currentStep>=TOTAL_STEPS;
+}
+const _goToStep = goToStep;
+window.goToStep = function(n){
+  if(n<1 || n>TOTAL_STEPS) return;
+  _goToStep(n);
+  refreshStepBar();
+  saveDraft();
+  window.scrollTo({top:0, behavior:'smooth'});
+};
+
+document.addEventListener('keydown', e=>{
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName);
+  if(e.altKey && e.key==='ArrowRight'){ e.preventDefault(); goToStep(currentStep+1); }
+  else if(e.altKey && e.key==='ArrowLeft'){ e.preventDefault(); goToStep(currentStep-1); }
+  else if((e.ctrlKey||e.metaKey) && e.key==='Enter'){ e.preventDefault(); jumpAndGenerate(); }
+  else if(!typing && e.key==='Enter' && currentStep<TOTAL_STEPS){ goToStep(currentStep+1); }
+});
+
+/* ---- Draft persistence: nothing is lost if the ward PC logs you out ---- */
+const DRAFT_KEY = 'swnb_draft_v1';
+let restoringDraft = false;
+let draftTimer = null;
+
+function collectDraft(){
+  const d = {v:1, at:Date.now(), step:currentStep, shift:window.currentShift,
+             wounds:(typeof woundEntryCount!=='undefined'? woundEntryCount:1),
+             bloods:(typeof bloodResultEntryCount!=='undefined'? bloodResultEntryCount:1),
+             pills:[], fields:{}, checks:[]};
+  document.querySelectorAll('.pill').forEach(p=>{
+    const i = p.querySelector('input');
+    if(i && i.checked && p.id) d.pills.push(p.id);
+  });
+  document.querySelectorAll('input, select, textarea').forEach(el=>{
+    if(!el.id || el.id==='noteOut') return;
+    if(el.type==='checkbox' || el.type==='radio'){ if(el.checked) d.checks.push(el.id); }
+    else if(el.value && el.value.trim()) d.fields[el.id] = el.value;
+  });
+  return d;
+}
+function saveDraft(){
+  if(restoringDraft) return;
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(()=>{
+    try{
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(collectDraft()));
+      const s = document.getElementById('abSave');
+      if(s) s.textContent = 'Draft saved ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    }catch(e){}
+    refreshStepBar();
+  }, 500);
+}
+document.addEventListener('input', saveDraft, true);
+document.addEventListener('change', saveDraft, true);
+
+function readDraft(){
+  try{
+    const raw = localStorage.getItem(DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function discardDraft(){
+  try{ localStorage.removeItem(DRAFT_KEY); }catch(e){}
+  const bar = document.getElementById('draftBar');
+  if(bar) bar.classList.remove('show');
+}
+function restoreDraft(){
+  const d = readDraft();
+  if(!d) return;
+  restoringDraft = true;
+  try{
+    (d.pills||[]).forEach(id=>{
+      const p = document.getElementById(id), i = p && p.querySelector('input');
+      if(i){ i.checked = true; p.classList.add('active'); }
+    });
+    if(typeof renderDeviceSections==='function') renderDeviceSections();
+    if(typeof woundEntryCount!=='undefined' && d.wounds>1){ woundEntryCount = d.wounds; renderWoundEntries(); }
+    if(typeof bloodResultEntryCount!=='undefined' && d.bloods>1){ bloodResultEntryCount = d.bloods; renderBloodResultEntries(); }
+    (d.checks||[]).forEach(id=>{
+      const el = document.getElementById(id);
+      if(el && !el.closest('.pill')){ el.checked = true; el.dispatchEvent(new Event('change', {bubbles:true})); }
+    });
+    Object.keys(d.fields||{}).forEach(id=>{
+      const el = document.getElementById(id);
+      if(el){ el.value = d.fields[id]; el.dispatchEvent(new Event('change', {bubbles:true})); }
+    });
+    if(d.shift && typeof setShift==='function') setShift(d.shift);
+  }catch(e){ console.warn('draft restore partial', e); }
+  restoringDraft = false;
+  discardDraft();
+  goToStep(d.step || 1);
+}
+(function offerDraft(){
+  const d = readDraft();
+  if(!d) { refreshStepBar(); return; }
+  const bar = document.getElementById('draftBar'), txt = document.getElementById('draftBarText');
+  const when = new Date(d.at||Date.now());
+  if(txt) txt.textContent = 'Unfinished entry from ' + when.toLocaleString([], {weekday:'short', hour:'2-digit', minute:'2-digit'}) + ' \u2014 step ' + (d.step||1) + ' of ' + TOTAL_STEPS + '.';
+  if(bar) bar.classList.add('show');
+  refreshStepBar();
+})();
 </script>
 </body>
 </html>
