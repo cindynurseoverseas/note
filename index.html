@@ -88,24 +88,6 @@
   .stepnav-btn:hover{background:var(--primary-light);}
   .stepnav-back{background:var(--surface-alt); color:var(--ink);}
   @media (max-width:700px){ .stepdot-label{display:none;} .stepdot{flex:0 0 auto; padding:6px;} }
-
-  .stepdot.filled .stepdot-num{background:var(--primary-light); color:#fff;}
-  .stepdot.active.filled .stepdot-num{background:#fff; color:var(--primary);}
-
-  .actionbar{position:fixed; left:0; right:0; bottom:0; background:rgba(255,255,255,0.97); border-top:1px solid var(--border); box-shadow:0 -2px 14px rgba(0,0,0,0.08); z-index:50;}
-  .actionbar-inner{max-width:1180px; margin:0 auto; padding:10px 20px; display:flex; align-items:center; gap:10px;}
-  .ab-label{font-size:0.8rem; color:var(--ink-soft); font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .ab-spacer{flex:1;}
-  .ab-save{font-size:0.72rem; color:#8AA39D; white-space:nowrap;}
-  .actionbar .stepnav-btn{padding:8px 14px;}
-  .actionbar .generate{padding:9px 18px; font-size:0.87rem;}
-  .actionbar .stepnav-btn:disabled{opacity:0.35; cursor:default;}
-  .draftbar{display:none; align-items:center; gap:10px; flex-wrap:wrap; background:var(--primary-dim); border:1px solid var(--primary-light); border-radius:var(--radius); padding:10px 14px; margin-bottom:14px; font-size:0.84rem; color:var(--primary);}
-  .draftbar.show{display:flex;}
-  .draftbar button{border:none; border-radius:7px; padding:7px 14px; font-weight:700; font-size:0.8rem; cursor:pointer;}
-  .draftbar .db-restore{background:var(--primary); color:#fff;}
-  .draftbar .db-discard{background:#fff; color:var(--ink-soft); border:1px solid var(--border);}
-  @media (max-width:700px){ .ab-label, .ab-save{display:none;} }
 </style>
 </head>
 <body>
@@ -114,13 +96,6 @@
   <div class="photoBanner" id="photoBannerWrap" onclick="loadMemoryPhoto()" title="Click for another memory">
     <img id="memoryPhotoImg" src="" alt="A happy memory">
     <button type="button" class="photoShuffleBtn" onclick="event.stopPropagation(); loadMemoryPhoto();">🔀 New photo</button>
-  </div>
-
-  <div class="draftbar" id="draftBar">
-    <span id="draftBarText">Unsaved entry found.</span>
-    <span class="ab-spacer"></span>
-    <button type="button" class="db-restore" onclick="restoreDraft()">Restore it</button>
-    <button type="button" class="db-discard" onclick="discardDraft()">Start fresh</button>
   </div>
 
   <header class="top">
@@ -229,7 +204,7 @@
       <div class="vital"><label>SpO2 %</label><input type="number" id="v_spo2" placeholder="—" oninput="renderNEWS2()"></div>
       <div class="vital wide">
         <label>O2 delivery</label>
-        <select id="v_o2device" onchange="renderNEWS2()">
+        <select id="v_o2device" onchange="renderNEWS2(); toggleHFNCFields();">
           <option value="room air">Room air</option>
           <option value="nasal specs">Nasal specs</option>
           <option value="wide bore nasal specs">Wide bore nasal specs</option>
@@ -238,6 +213,8 @@
         </select>
       </div>
       <div class="vital"><label>Flow L/min</label><input type="number" id="v_flow" placeholder="—"></div>
+      <div class="vital" id="v_hfnc_fio2_wrap" style="display:none;"><label>HFNC FiO2 %</label><input type="number" id="v_hfnc_fio2" placeholder="e.g. 40"></div>
+      <div class="vital" id="v_hfnc_temp_wrap" style="display:none;"><label>HFNC Temp &deg;C</label><input type="number" id="v_hfnc_temp" placeholder="e.g. 34"></div>
       <div class="vital"><label>HR bpm</label><input type="number" id="v_hr" placeholder="—" oninput="renderNEWS2()"></div>
       <div class="vital"><label>BP systolic</label><input type="number" id="v_bp_sys" placeholder="—" oninput="renderNEWS2()"></div>
       <div class="vital"><label>BP diastolic</label><input type="number" id="v_bp_dia" placeholder="—"></div>
@@ -730,7 +707,7 @@
 <div class="genbar">
     <button class="generate" onclick="generateNote()">Generate Note</button>
     <button class="reword" onclick="generateNote()">🎲 Reword (same selections)</button>
-    <button class="copy" id="copyBtn" onclick="copyNote()">Copy to clipboard</button>
+    <button class="copy" onclick="copyNote()">Copy to clipboard</button>
     <button class="copy" style="background:#FBEAEA; color:var(--danger); border-color:var(--danger);" onclick="resetForm()">Reset (new patient)</button>
     <div class="smallnote">Each click re-picks wording from several variants per line. Vital-sign lines only claim "normal" when the entered value actually scores 0 on NEWS2 — abnormal values are flagged rather than smoothed over.</div>
     <textarea id="noteOut" readonly placeholder="Your generated note will appear here..."></textarea>
@@ -740,17 +717,6 @@
 </div>
 
 
-</div>
-
-<div class="actionbar" id="actionBar">
-  <div class="actionbar-inner">
-    <button type="button" class="stepnav-btn stepnav-back" id="abBack" onclick="goToStep(currentStep-1)">← Back</button>
-    <button type="button" class="stepnav-btn" id="abNext" onclick="goToStep(currentStep+1)">Next →</button>
-    <span class="ab-label" id="abStepLabel"></span>
-    <span class="ab-spacer"></span>
-    <span class="ab-save" id="abSave"></span>
-    <button type="button" class="generate" onclick="jumpAndGenerate()">Generate note</button>
-  </div>
 </div>
 
 <script>
@@ -970,6 +936,7 @@ const DEVICES_PATHWAY = [
   {id:'heparin', label:'Heparin infusion'},
   {id:'electrolyte', label:'Electrolyte replacement'},
   {id:'ciwa', label:'CIWA-Ar (alcohol withdrawal)'},
+  {id:'metcall', label:'MET call'},
 ];
 
 const DEVICES_CARDIAC = [
@@ -982,6 +949,7 @@ const DEVICES_SYMPTOMS = [
   {id:'nauseavomit', label:'Nausea/Vomiting'},
   {id:'reflux', label:'Reflux'},
   {id:'indigestion', label:'Indigestion'},
+  {id:'agitation', label:'Agitation/Confusion'},
 ];
 
 const MOBILITY = [
@@ -1062,6 +1030,11 @@ function toggleBowelBristolPopups(){
   const t = parseInt(getVal('bowelBristol'));
   document.getElementById('bowelLaxativeReveal').classList.toggle('show', t>=1 && t<=3);
   document.getElementById('bowelStoolSampleReveal').classList.toggle('show', t>=5 && t<=7);
+}
+function toggleMetCriteria(idx){
+  const el = document.getElementById('met_criteria_'+idx);
+  const rev = document.getElementById('met_intv_reveal_'+idx);
+  if(el && rev) rev.classList.toggle('show', el.checked);
 }
 function toggleRibPainEscalation(){
   const val = getVal('rib_dynamic_pain');
@@ -1275,6 +1248,7 @@ function addNewsEntry(){ newsEntryCount++; renderNewsEntries(); }
 function removeNewsEntry(){ if(newsEntryCount>0){ newsEntryCount--; renderNewsEntries(); } }
 function computeNEWS2Entry(i){
   const rr=getVal('newsEntry_rr_'+i), spo2=getVal('newsEntry_spo2_'+i), o2dev=getVal('newsEntry_o2dev_'+i)||'room air', flow=getVal('newsEntry_flow_'+i);
+  const fio2=getVal('newsEntry_hfnc_fio2_'+i), hfncTemp=getVal('newsEntry_hfnc_temp_'+i);
   const sys=getVal('newsEntry_bpsys_'+i), dia=getVal('newsEntry_bpdia_'+i), hr=getVal('newsEntry_hr_'+i), temp=getVal('newsEntry_temp_'+i);
   const onOxygen = o2dev !== 'room air';
   const confusionEl = document.getElementById('newsEntry_confusion_'+i);
@@ -1289,7 +1263,7 @@ function computeNEWS2Entry(i){
   let risk;
   if(total>=7) risk='High'; else if(anyThree) risk='Low\u2013Medium (red score)'; else if(total>=5) risk='Medium'; else risk='Low';
   const isAbnormal = total>=5 || anyThree;
-  return {total, risk, missing, hasAnyData, anyThree, isAbnormal, sRR,sSpO2,sBP,sHR,sTemp, consciousness, rr,spo2,o2dev,flow,sys,dia,hr,temp,confusion};
+  return {total, risk, missing, hasAnyData, anyThree, isAbnormal, sRR,sSpO2,sBP,sHR,sTemp, consciousness, rr,spo2,o2dev,flow,fio2,hfncTemp,sys,dia,hr,temp,confusion};
 }
 function updateNewsEntryScore(i){
   const r = computeNEWS2Entry(i);
@@ -1308,7 +1282,7 @@ function renderNewsEntries(){
         <div><label class="field">Time</label><input type="text" id="newsEntry_time_${i}" placeholder="e.g. 12:00"></div>
         <div><label class="field">RR /min</label><input type="number" id="newsEntry_rr_${i}" oninput="updateNewsEntryScore(${i})"></div>
         <div><label class="field">SpO2 %</label><input type="number" id="newsEntry_spo2_${i}" oninput="updateNewsEntryScore(${i})"></div>
-        <div><label class="field">O2 device</label><select id="newsEntry_o2dev_${i}" onchange="updateNewsEntryScore(${i})">
+        <div><label class="field">O2 device</label><select id="newsEntry_o2dev_${i}" onchange="updateNewsEntryScore(${i}); toggleHFNCFieldsEntry(${i});">
           <option value="room air">Room air</option>
           <option value="nasal specs">Nasal specs</option>
           <option value="wide bore nasal specs">Wide bore nasal specs</option>
@@ -1316,6 +1290,8 @@ function renderNewsEntries(){
           <option value="venturi">Venturi mask</option>
         </select></div>
         <div><label class="field">Flow L/min</label><input type="number" id="newsEntry_flow_${i}" placeholder="e.g. 2"></div>
+        <div id="newsEntry_hfnc_fio2_wrap_${i}" style="display:none;"><label class="field">HFNC FiO2 %</label><input type="number" id="newsEntry_hfnc_fio2_${i}" placeholder="e.g. 40"></div>
+        <div id="newsEntry_hfnc_temp_wrap_${i}" style="display:none;"><label class="field">HFNC Temp &deg;C</label><input type="number" id="newsEntry_hfnc_temp_${i}" placeholder="e.g. 34"></div>
         <div><label class="field">HR bpm</label><input type="number" id="newsEntry_hr_${i}" oninput="updateNewsEntryScore(${i})"></div>
         <div><label class="field">BP systolic</label><input type="number" id="newsEntry_bpsys_${i}" oninput="updateNewsEntryScore(${i})"></div>
         <div><label class="field">BP diastolic</label><input type="number" id="newsEntry_bpdia_${i}"></div>
@@ -1336,7 +1312,7 @@ function renderNewsEntries(){
   }
   container.innerHTML = html;
   container.querySelectorAll('input, select').forEach(el=>{ if(saved.hasOwnProperty(el.id)){ if(el.type==='checkbox') el.checked = saved[el.id]; else el.value = saved[el.id]; } });
-  for(let i=1;i<=newsEntryCount;i++) updateNewsEntryScore(i);
+  for(let i=1;i<=newsEntryCount;i++){ updateNewsEntryScore(i); toggleHFNCFieldsEntry(i); }
   const removeBtn = document.getElementById('newsEntryRemoveBtn');
   if(removeBtn) removeBtn.style.display = newsEntryCount>0 ? 'inline-block' : 'none';
 }
@@ -1471,6 +1447,20 @@ function renderFbEntries(){
   if(removeBtn) removeBtn.style.display = fbEntryCount>1 ? 'inline-block' : 'none';
 }
 renderFbEntries();
+function toggleHFNCFields(){
+  const isHFNC = getVal('v_o2device') === 'hfnc';
+  const fio2Wrap = document.getElementById('v_hfnc_fio2_wrap');
+  const tempWrap = document.getElementById('v_hfnc_temp_wrap');
+  if(fio2Wrap) fio2Wrap.style.display = isHFNC ? '' : 'none';
+  if(tempWrap) tempWrap.style.display = isHFNC ? '' : 'none';
+}
+function toggleHFNCFieldsEntry(i){
+  const isHFNC = getVal('newsEntry_o2dev_'+i) === 'hfnc';
+  const fio2Wrap = document.getElementById('newsEntry_hfnc_fio2_wrap_'+i);
+  const tempWrap = document.getElementById('newsEntry_hfnc_temp_wrap_'+i);
+  if(fio2Wrap) fio2Wrap.style.display = isHFNC ? '' : 'none';
+  if(tempWrap) tempWrap.style.display = isHFNC ? '' : 'none';
+}
 function renderPainCheck(){
   const level = getVal('v_pain');
   const panel = document.getElementById('painMgmtPanel');
@@ -1595,19 +1585,31 @@ function varyRR(rr){
   const dir = v<12 ? 'reduced':'elevated';
   return pick([`Respiratory rate ${rr} breaths/min, ${dir} from normal range \u2014 noted and monitored.`, `RR ${rr}/min (${dir}); surgical team aware, being closely monitored.`]);
 }
-function varySpO2(spo2,o2dev,flow,onOxygen,scale2){
-  const flowTxt = flow? ` at ${flow}L/min`:'';
-  if(spo2==='') return `Oxygen saturation [X]% on ${o2dev||'room air'}${flowTxt} recorded.`;
+function buildO2DeviceTxt(o2dev, flow, fio2, hfncTemp){
+  const dev = o2dev || 'room air';
+  if(dev === 'hfnc'){
+    const parts = [];
+    if(fio2) parts.push(`FiO2 ${fio2}%`);
+    if(flow) parts.push(`flow ${flow}L/min`);
+    if(hfncTemp) parts.push(`humidified at ${hfncTemp}\u00b0C`);
+    return parts.length ? `HFNC (${parts.join(', ')})` : 'HFNC';
+  }
+  const flowTxt = flow ? ` at ${flow}L/min` : '';
+  return `${dev}${flowTxt}`;
+}
+function varySpO2(spo2,o2dev,flow,onOxygen,scale2,fio2,hfncTemp){
+  const deviceTxt = buildO2DeviceTxt(o2dev, flow, fio2, hfncTemp);
+  if(spo2==='') return `Oxygen saturation [X]% on ${deviceTxt} recorded.`;
   const s=scoreSpO2(spo2,onOxygen,scale2);
-  if(s===0) return pick([`Oxygen saturation ${spo2}% on ${o2dev||'room air'}${flowTxt}, no signs of respiratory distress.`, `SpO2 ${spo2}% on ${o2dev||'room air'}${flowTxt}; no accessory muscle use or nasal flaring noted.`, `Sats ${spo2}% on ${o2dev||'room air'}${flowTxt}, comfortable on this level of support.`]);
-  return pick([`Oxygen saturation ${spo2}% on ${o2dev||'room air'}${flowTxt}, outside target range \u2014 surgical team aware, closely monitored.`, `SpO2 ${spo2}% on ${o2dev||'room air'}${flowTxt}; outside expected range, escalation considered as appropriate.`]);
+  if(s===0) return pick([`Oxygen saturation ${spo2}% on ${deviceTxt}, no signs of respiratory distress.`, `SpO2 ${spo2}% on ${deviceTxt}; no accessory muscle use or nasal flaring noted.`, `Sats ${spo2}% on ${deviceTxt}, comfortable on this level of support.`]);
+  return pick([`Oxygen saturation ${spo2}% on ${deviceTxt}, outside target range \u2014 surgical team aware, closely monitored.`, `SpO2 ${spo2}% on ${deviceTxt}; outside expected range, escalation considered as appropriate.`]);
 }
 function varyHR(hr){
   if(hr==='') return `Heart rate [X] bpm recorded.`;
   const s=scoreHR(hr), v=parseFloat(hr);
   if(s===0) return pick([`Heart rate ${hr} bpm, regular rhythm.`, `HR ${hr} bpm, regular in rhythm.`, `Pulse ${hr} bpm, regular and well sustained.`]);
   const dir = v<51 ? 'bradycardic':'tachycardic';
-  return pick([`Heart rate ${hr} bpm, ${dir}; surgical team aware, monitored closely.`, `HR ${hr} bpm (${dir}); outside normal parameters, surgical team informed.`]);
+  return pick([`Heart rate ${hr} bpm, ${dir}; surgical team aware, monitored closely.`, `HR ${hr} bpm (${dir}); noted and escalated as appropriate.`]);
 }
 function varyBP(sys,dia){
   const combined = (sys||'[X]') + '/' + (dia||'[X]');
@@ -1615,18 +1617,19 @@ function varyBP(sys,dia){
   const s=scoreBP(sys), v=parseFloat(sys);
   if(s===0) return pick([`Blood pressure ${combined} mmHg, within normal limits.`, `BP ${combined} mmHg, within normal range.`, `Blood pressure recorded at ${combined} mmHg, normotensive.`]);
   const dir = v<111 ? 'hypotensive':'hypertensive';
-  return pick([`Blood pressure ${combined} mmHg, ${dir}; surgical team aware, monitored closely.`, `BP ${combined} mmHg (${dir}); outside normal parameters, surgical team informed.`]);
+  return pick([`Blood pressure ${combined} mmHg, ${dir}; surgical team aware, monitored closely.`, `BP ${combined} mmHg (${dir}); noted, escalation considered as appropriate.`]);
 }
 function varyTemp(temp){
   if(temp==='') return `Temperature [X]\u00b0C recorded.`;
   const s=scoreTemp(temp), v=parseFloat(temp);
   if(s===0) return pick([`Temperature ${temp}\u00b0C, within normal range.`, `Temp ${temp}\u00b0C, afebrile.`, `Recorded temperature ${temp}\u00b0C, normal range.`]);
   const dir = v<36.1 ? 'hypothermic':'pyrexial';
-  return pick([`Temperature ${temp}\u00b0C, ${dir}; surgical team aware, monitored closely.`, `Temp ${temp}\u00b0C (${dir}); outside normal parameters, surgical team informed.`]);
+  return pick([`Temperature ${temp}\u00b0C, ${dir}; surgical team aware, monitored closely.`, `Temp ${temp}\u00b0C (${dir}); noted and escalated as appropriate.`]);
 }
 
 function getAllNewsReadings(){
   const mRR=getVal('v_rr'), mSpO2=getVal('v_spo2'), mO2dev=getVal('v_o2device'), mFlow=getVal('v_flow');
+  const mFio2=getVal('v_hfnc_fio2'), mHfncTemp=getVal('v_hfnc_temp');
   const mHR=getVal('v_hr'), mSys=getVal('v_bp_sys'), mDia=getVal('v_bp_dia'), mTemp=getVal('v_temp');
   const mOnOxygen = mO2dev !== 'room air', mScale2 = document.getElementById('spo2Scale2Chk').checked;
   const mConfusion = document.getElementById('D_other_chk').checked;
@@ -1638,7 +1641,7 @@ function getAllNewsReadings(){
   const mIsAbnormal = mTotal>=5 || mParts.some(x=>x===3);
   const list = [{
     time: null, isMain: true,
-    rr:mRR, spo2:mSpO2, o2dev:mO2dev, flow:mFlow, hr:mHR, sys:mSys, dia:mDia, temp:mTemp, confusion:mConfusion, scale2:mScale2,
+    rr:mRR, spo2:mSpO2, o2dev:mO2dev, flow:mFlow, fio2:mFio2, hfncTemp:mHfncTemp, hr:mHR, sys:mSys, dia:mDia, temp:mTemp, confusion:mConfusion, scale2:mScale2,
     sRR:mSRR, sSpO2:mSSpO2, sBP:mSBP, sHR:mSHR, sTemp:mSTemp,
     total:mTotal, missing:mMissing, isAbnormal:mIsAbnormal,
     hasAnyData: mRR!=='' || mSpO2!=='' || mSys!=='' || mHR!=='' || mTemp!==''
@@ -1650,7 +1653,7 @@ function getAllNewsReadings(){
     if(!time && !r.hasAnyData && !note) continue;
     list.push({
       time: time||null, isMain:false, entryIndex:i, note,
-      rr:r.rr, spo2:r.spo2, o2dev:r.o2dev, flow:r.flow, hr:r.hr, sys:r.sys, dia:r.dia, temp:r.temp, confusion:r.confusion, scale2:false,
+      rr:r.rr, spo2:r.spo2, o2dev:r.o2dev, flow:r.flow, fio2:r.fio2, hfncTemp:r.hfncTemp, hr:r.hr, sys:r.sys, dia:r.dia, temp:r.temp, confusion:r.confusion, scale2:false,
       sRR:r.sRR, sSpO2:r.sSpO2, sBP:r.sBP, sHR:r.sHR, sTemp:r.sTemp, hasAnyData:r.hasAnyData, isAbnormal:r.isAbnormal, total:r.total, missing:r.missing
     });
   }
@@ -1667,7 +1670,7 @@ function combineRR(readings){
 function combineSpO2All(readings){
   const vals = readings.filter(r=>r.spo2!=='');
   if(vals.length===0) return varySpO2('','room air','',false,false);
-  if(vals.length===1){ const r=vals[0]; return varySpO2(r.spo2, r.o2dev, r.flow, r.o2dev!=='room air', r.scale2); }
+  if(vals.length===1){ const r=vals[0]; return varySpO2(r.spo2, r.o2dev, r.flow, r.o2dev!=='room air', r.scale2, r.fio2, r.hfncTemp); }
   const nums = vals.map(r=>parseFloat(r.spo2));
   const mn=Math.min(...nums), mx=Math.max(...nums);
   const devices = [...new Set(vals.map(r=>r.o2dev))];
@@ -1675,6 +1678,17 @@ function combineSpO2All(readings){
   if(devices.length===1){
     const dev = devices[0];
     if(dev==='room air'){ deviceTxt = ' on room air'; }
+    else if(dev==='hfnc'){
+      const fio2s = vals.filter(r=>r.fio2).map(r=>parseFloat(r.fio2));
+      const flows = vals.filter(r=>r.flow).map(r=>parseFloat(r.flow));
+      const temps = vals.filter(r=>r.hfncTemp).map(r=>parseFloat(r.hfncTemp));
+      const rangeTxt = (arr)=> arr.length ? (Math.min(...arr)===Math.max(...arr) ? `${Math.min(...arr)}` : `${Math.min(...arr)}-${Math.max(...arr)}`) : null;
+      const hfncParts = [];
+      const fio2Range = rangeTxt(fio2s); if(fio2Range) hfncParts.push(`FiO2 ${fio2Range}%`);
+      const flowRange = rangeTxt(flows); if(flowRange) hfncParts.push(`flow ${flowRange}L/min`);
+      const tempRange = rangeTxt(temps); if(tempRange) hfncParts.push(`humidified at ${tempRange}\u00b0C`);
+      deviceTxt = hfncParts.length ? ` on HFNC (${hfncParts.join(', ')})` : ' on HFNC';
+    }
     else {
       const flows = vals.filter(r=>r.flow).map(r=>parseFloat(r.flow));
       deviceTxt = flows.length ? ` on ${dev} ${Math.min(...flows)===Math.max(...flows)?Math.min(...flows):Math.min(...flows)+'-'+Math.max(...flows)}L/min` : ` on ${dev}`;
@@ -1756,8 +1770,8 @@ function interpretGas(ph,pco2,hco3,lactate,k){
   const msgs = [];
   if(ph!==undefined && ph!==''){
     const v=parseFloat(ph);
-    if(v<7.35) msgs.push('Acidosis (pH<7.35) \u2014 identify cause, consider repeat gas and medical review.');
-    else if(v>7.45) msgs.push('Alkalosis (pH>7.45) \u2014 identify cause, consider repeat gas and medical review.');
+    if(v<7.35) msgs.push('Acidosis (pH<7.35) \u2014 identify cause, consider repeat gas and surgical team review.');
+    else if(v>7.45) msgs.push('Alkalosis (pH>7.45) \u2014 identify cause, consider repeat gas and surgical team review.');
   }
   if(pco2!==undefined && pco2!==''){
     const v=parseFloat(pco2);
@@ -1812,11 +1826,22 @@ function abgText(f, prefix){
     if(document.getElementById(prefix+'_gas_medteam')?.checked) actions.push('surgical SHO informed');
     if(document.getElementById(prefix+'_gas_outreach')?.checked) actions.push('outreach/senior review requested');
     if(document.getElementById(prefix+'_gas_pathway')?.checked) actions.push('relevant pathway actioned');
-    out += actions.length ? ` Action taken: ${actions.join(', ')}.` : ' Awaiting action/medical review.';
+    out += actions.length ? ` Action taken: ${actions.join(', ')}.` : ' Awaiting action/surgical team review.';
   }
   return out;
 }
 
+const MET_CRITERIA = [
+  {c:'Airway threatened/compromised', i:['Airway opening manoeuvre (head tilt/chin lift or jaw thrust)','Airway suction performed','Oropharyngeal/nasopharyngeal airway inserted','High-concentration O2 via reservoir mask (15L/min)','Anaesthetic/airway expert called']},
+  {c:'Respiratory rate \u22645 or \u226536 breaths/min', i:['High-concentration oxygen given, target SpO2 94\u201398% (88\u201392% if at risk of hypercapnic failure)','NIV/CPAP considered','Bronchodilators given (if wheeze/bronchospasm)','Naloxone considered (if opioid-induced)','ABG obtained','Senior/anaesthetic review requested']},
+  {c:'SpO2 <90% despite oxygen', i:['Oxygen up-titrated (reservoir mask 15L/min)','NIV/CPAP considered','ABG obtained','Chest examined, portable CXR requested','Underlying cause treated (e.g. bronchodilators, diuretics, chest drain)']},
+  {c:'Systolic BP <90mmHg', i:['IV access sited (large-bore cannula)','IV fluid bolus given (e.g. 250\u2013500ml crystalloid)','Patient laid flat, legs raised if appropriate','Cause identified/treated (bleeding, sepsis, cardiac)','Blood transfusion considered','Senior/critical care review requested']},
+  {c:'Heart rate <40 or >140bpm', i:['12-lead ECG obtained','Continuous cardiac monitoring established','Atropine 500mcg IV given (if bradycardia with adverse signs)','Reversible causes treated','Senior/cardiology review requested']},
+  {c:'New or prolonged seizure (>5 min)', i:['Airway protected, patient placed in recovery position if safe','Oxygen given','Capillary glucose checked','IV/buccal/rectal benzodiazepine given (e.g. lorazepam, buccal midazolam, rectal diazepam)','Senior/neurology review requested']},
+  {c:'Sudden drop in GCS (\u22652 points) / significantly reduced consciousness', i:['Full ABCDE assessment performed','Capillary glucose checked (hypoglycaemia excluded)','Naloxone considered (if opioid toxicity suspected)','Pupils examined','Urgent CT head considered','Senior review requested']},
+  {c:'NEWS2 score \u22657', i:['Full ABCDE assessment performed','Continuous monitoring established','Senior review requested','Critical care outreach/escalation considered']},
+  {c:'Staff member seriously worried about patient', i:['Full clinical assessment and full set of vitals repeated','Senior review requested','Rationale for concern documented']},
+];
 const ELECTROLYTE_ABNORMALITIES = [
   {id:'hypona', label:'Hyponatraemia (Na+ low, <130mmol/L)', mgmt:['Fluid restriction advised','IV normal saline given','Repeat bloods arranged','Surgical team informed']},
   {id:'hyperna', label:'Hypernatraemia (Na+ high)', mgmt:['IV fluids (hypotonic) given','Free water/oral fluids encouraged','Repeat bloods arranged','Surgical team informed']},
@@ -2007,6 +2032,48 @@ const DEVICE_TEMPLATES = {
   },
   electrolyte: {
     title:'Electrolyte replacement',
+  },
+  metcall: {
+    title:'MET call',
+    metCall: true,
+    gasPrefix:'met',
+    fields:[
+      {id:'met_time', label:'Time MET call activated', type:'text', placeholder:'e.g. 14:30'},
+      ...abgFields('met'),
+      {id:'met_response', label:'Additional MET team response/actions (free text)', type:'text', placeholder:'anything not covered above'},
+      {id:'met_outcome', label:'Outcome', type:'select', options:['Patient stabilised, remained on ward','Transferred to HDU/ICU','Transferred to theatre','Other']},
+    ],
+    build:(f)=>{
+      const time=f.met_time, response=f.met_response, outcome=f.met_outcome||'Patient stabilised, remained on ward';
+      const criteriaLines = [];
+      MET_CRITERIA.forEach((entry,idx)=>{
+        const el = document.getElementById('met_criteria_'+idx);
+        if(!(el && el.checked)) return;
+        const interventions = [];
+        entry.i.forEach((intv,iidx)=>{
+          const iel = document.getElementById('met_intv_'+idx+'_'+iidx);
+          if(iel && iel.checked) interventions.push(intv);
+        });
+        const otherIntv = getVal('met_intv_'+idx+'_other');
+        if(otherIntv) interventions.push(otherIntv);
+        let line = entry.c;
+        if(interventions.length) line += ` \u2014 ${interventions.join(', ')}`;
+        criteriaLines.push(line);
+      });
+      const otherCriterion = getVal('met_criteria_other');
+      if(otherCriterion) criteriaLines.push(otherCriterion);
+
+      let base = pick([
+        `MET call activated${time?' at '+time:''}.`,
+        `Medical Emergency Team called${time?' at '+time:''}.`
+      ]);
+      if(criteriaLines.length) base += `\nTrigger and interventions:\n${criteriaLines.map(l=>'\u2022 '+l).join('\n')}`;
+      const gasTxt = abgText(f,'met');
+      if(gasTxt) base += '\n' + gasTxt.trim();
+      if(response) base += `\n${response}.`;
+      base += `\nOutcome: ${outcome}.`;
+      return base;
+    }
   },
   ciwa: {
     title:'CIWA-Ar (alcohol withdrawal)',
@@ -2238,6 +2305,33 @@ const DEVICE_TEMPLATES = {
         `Indigestion reported; ${tx} given, ${effect.toLowerCase()}.`,
         `Complains of indigestion; treated with ${tx}, ${effect.toLowerCase()}.`
       ]); }
+  },
+  agitation: {
+    title:'Agitation/Confusion',
+    fields:[
+      {id:'ag_presentation', label:'Presentation', type:'select', options:['Verbal agitation','Physical agitation','Both verbal and physical agitation']},
+      {id:'ag_cause', label:'Likely underlying cause considered', type:'select_other', options:['Pain','Constipation/urinary retention','Infection/sepsis','Hypoxia','Electrolyte imbalance','Alcohol withdrawal','Unfamiliar environment/sensory impairment','Medication-related','Not yet identified']},
+      {id:'ag_nonpharm', label:'Non-pharmacological measures given', type:'select_other', options:['Reorientation and reassurance','Family/familiar objects involved','Environment optimised (lighting, noise, day-night cues)','Glasses/hearing aids in place','1:1 supervision arranged','Underlying cause treated (see above)']},
+      {id:'ag_med', label:'Medication given', type:'select_other', options:['None required \u2014 non-pharmacological measures effective','Haloperidol','Lorazepam','Risperidone','Quetiapine','Olanzapine']},
+      {id:'ag_effect', label:'Effect', type:'select', options:['Good effect, settled','Partial effect, continues to be monitored','No effect, ongoing concern']},
+    ],
+    build:(f)=>{
+      const presentation=f.ag_presentation||'Verbal agitation', cause=f.ag_cause||'not yet identified';
+      const nonpharm=f.ag_nonpharm||'reorientation and reassurance', med=f.ag_med||'None required \u2014 non-pharmacological measures effective', effect=f.ag_effect||'Good effect, settled';
+      let base = pick([
+        `${presentation} noted; possible contributing factor \u2014 ${cause.toLowerCase()}. Non-pharmacological measures given: ${nonpharm.toLowerCase()}.`,
+        `Patient exhibiting ${presentation.toLowerCase()}; ${cause.toLowerCase()} considered as a possible cause. Non-pharmacological approach tried first: ${nonpharm.toLowerCase()}.`
+      ]);
+      if(med && !med.startsWith('None required')){
+        base += ` ${med} given as prescribed following non-pharmacological measures, in the patient's best interests.`;
+        if(med==='Haloperidol') base += ' Baseline ECG/QTc checked prior to administration per trust policy.';
+      } else {
+        base += ' No medication required.';
+      }
+      base += ` ${effect}.`;
+      if(effect==='No effect, ongoing concern') base += ' Surgical SHO informed for further review.';
+      return base;
+    }
   },
   hyperk: {
     title:'Hyperkalaemia pathway',
@@ -2607,6 +2701,18 @@ function renderDeviceSections(){
       if(t.ciwaScore){
         card.innerHTML += `<div class="hint" id="ciwa_total_display" style="font-weight:700;"></div>`;
       }
+      if(t.metCall){
+        const critHtml = MET_CRITERIA.map((entry,idx)=>{
+          const intvHtml = entry.i.map((intv,iidx)=>`<div class="opt"><input type="checkbox" id="met_intv_${idx}_${iidx}"><label>${intv}</label></div>`).join('');
+          return `<div class="opt"><input type="checkbox" id="met_criteria_${idx}" onchange="toggleMetCriteria(${idx})"><label>${entry.c}</label></div>
+          <div class="reveal" id="met_intv_reveal_${idx}" style="margin-left:18px; margin-bottom:8px;">
+            <div class="hint">Intervention given (tick all that apply):</div>
+            ${intvHtml}
+            <input type="text" id="met_intv_${idx}_other" placeholder="other intervention (specify)" style="margin-top:4px;">
+          </div>`;
+        }).join('');
+        card.innerHTML += `<div class="hint" style="margin-top:8px;">Trigger criteria (tick all that apply \u2014 each reveals its guideline-based interventions):</div>${critHtml}<input type="text" id="met_criteria_other" placeholder="other trigger (specify)" style="margin-top:6px;">`;
+      }
       if(t.ribPathway){
         card.innerHTML += `<div class="reveal" id="ribLowPainReveal">
           <div class="hint">No/mild pain \u2014 nursing actions:</div>
@@ -2640,6 +2746,7 @@ function renderDeviceSections(){
     if(devId==='stoma'){ toggleStomaBristolPopups(); }
     if(devId==='ciwa'){ updateCiwaScore(); }
     if(devId==='ribpathway'){ toggleRibPainEscalation(); toggleRibReferralSlip(); }
+    if(devId==='metcall'){ MET_CRITERIA.forEach((entry,idx)=>toggleMetCriteria(idx)); }
     if(t && t.fields){ t.fields.forEach(f=>{ if(f.type==='select_other') toggleOtherField(f.id); }); }
   });
 }
@@ -3269,160 +3376,14 @@ function generateNote(){
 
 function resetForm(){
   if(confirm('Reset all entries and start a new patient? This clears everything currently entered.')){
-    try{ localStorage.removeItem(DRAFT_KEY); }catch(e){}
     location.reload();
   }
 }
 function copyNote(){
   const ta = document.getElementById('noteOut');
-  if(!ta.value.trim()) generateNote();
-  const btn = document.getElementById('copyBtn');
-  const flash = ()=>{
-    if(!btn) return;
-    const original = 'Copy to clipboard';
-    btn.textContent = '\u2713 Copied';
-    setTimeout(()=>{ btn.textContent = original; }, 1600);
-  };
-  const fallback = ()=>{ ta.select(); document.execCommand('copy'); flash(); };
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(ta.value).then(flash).catch(fallback);
-  } else { fallback(); }
+  ta.select();
+  document.execCommand('copy');
 }
-
-function jumpAndGenerate(){
-  goToStep(TOTAL_STEPS);
-  generateNote();
-  const out = document.getElementById('noteOut');
-  if(out) out.focus({preventScroll:true});
-}
-
-/* ---- Step bar state: which steps have data, where you are ---- */
-function captureBaseline(root){
-  (root||document).querySelectorAll('input, select, textarea').forEach(el=>{
-    if(el.dataset.swnbDefault === undefined) el.dataset.swnbDefault = el.value;
-  });
-}
-function stepHasData(n){
-  const step = document.querySelector('.step[data-step="'+n+'"]');
-  if(!step) return false;
-  captureBaseline(step);
-  return Array.from(step.querySelectorAll('input, select, textarea')).some(el=>{
-    if(el.id==='noteOut') return false;
-    if(el.type==='checkbox' || el.type==='radio') return el.checked !== el.defaultChecked;
-    return el.value !== el.dataset.swnbDefault;
-  });
-}
-function refreshStepBar(){
-  captureBaseline();
-  document.querySelectorAll('.stepdot').forEach(dot=>{
-    dot.classList.toggle('filled', stepHasData(parseInt(dot.dataset.stepdot)));
-  });
-  const label = document.getElementById('abStepLabel');
-  const dot = document.querySelector('.stepdot[data-stepdot="'+currentStep+'"] .stepdot-label');
-  if(label) label.textContent = 'Step '+currentStep+' of '+TOTAL_STEPS+(dot? ' \u00b7 '+dot.textContent : '');
-  const back = document.getElementById('abBack'), next = document.getElementById('abNext');
-  if(back) back.disabled = currentStep<=1;
-  if(next) next.disabled = currentStep>=TOTAL_STEPS;
-}
-const _goToStep = goToStep;
-window.goToStep = function(n){
-  if(n<1 || n>TOTAL_STEPS) return;
-  _goToStep(n);
-  refreshStepBar();
-  saveDraft();
-  window.scrollTo({top:0, behavior:'smooth'});
-};
-
-document.addEventListener('keydown', e=>{
-  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName);
-  if(e.altKey && e.key==='ArrowRight'){ e.preventDefault(); goToStep(currentStep+1); }
-  else if(e.altKey && e.key==='ArrowLeft'){ e.preventDefault(); goToStep(currentStep-1); }
-  else if((e.ctrlKey||e.metaKey) && e.key==='Enter'){ e.preventDefault(); jumpAndGenerate(); }
-  else if(!typing && e.key==='Enter' && currentStep<TOTAL_STEPS){ goToStep(currentStep+1); }
-});
-
-/* ---- Draft persistence: nothing is lost if the ward PC logs you out ---- */
-const DRAFT_KEY = 'swnb_draft_v1';
-let restoringDraft = false;
-let draftTimer = null;
-
-function collectDraft(){
-  const d = {v:1, at:Date.now(), step:currentStep, shift:window.currentShift,
-             wounds:(typeof woundEntryCount!=='undefined'? woundEntryCount:1),
-             bloods:(typeof bloodResultEntryCount!=='undefined'? bloodResultEntryCount:1),
-             pills:[], fields:{}, checks:[]};
-  document.querySelectorAll('.pill').forEach(p=>{
-    const i = p.querySelector('input');
-    if(i && i.checked && p.id) d.pills.push(p.id);
-  });
-  document.querySelectorAll('input, select, textarea').forEach(el=>{
-    if(!el.id || el.id==='noteOut') return;
-    if(el.type==='checkbox' || el.type==='radio'){ if(el.checked) d.checks.push(el.id); }
-    else if(el.value && el.value.trim()) d.fields[el.id] = el.value;
-  });
-  return d;
-}
-function saveDraft(){
-  if(restoringDraft) return;
-  clearTimeout(draftTimer);
-  draftTimer = setTimeout(()=>{
-    try{
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(collectDraft()));
-      const s = document.getElementById('abSave');
-      if(s) s.textContent = 'Draft saved ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    }catch(e){}
-    refreshStepBar();
-  }, 500);
-}
-document.addEventListener('input', saveDraft, true);
-document.addEventListener('change', saveDraft, true);
-
-function readDraft(){
-  try{
-    const raw = localStorage.getItem(DRAFT_KEY);
-    return raw ? JSON.parse(raw) : null;
-  }catch(e){ return null; }
-}
-function discardDraft(){
-  try{ localStorage.removeItem(DRAFT_KEY); }catch(e){}
-  const bar = document.getElementById('draftBar');
-  if(bar) bar.classList.remove('show');
-}
-function restoreDraft(){
-  const d = readDraft();
-  if(!d) return;
-  restoringDraft = true;
-  try{
-    (d.pills||[]).forEach(id=>{
-      const p = document.getElementById(id), i = p && p.querySelector('input');
-      if(i){ i.checked = true; p.classList.add('active'); }
-    });
-    if(typeof renderDeviceSections==='function') renderDeviceSections();
-    if(typeof woundEntryCount!=='undefined' && d.wounds>1){ woundEntryCount = d.wounds; renderWoundEntries(); }
-    if(typeof bloodResultEntryCount!=='undefined' && d.bloods>1){ bloodResultEntryCount = d.bloods; renderBloodResultEntries(); }
-    (d.checks||[]).forEach(id=>{
-      const el = document.getElementById(id);
-      if(el && !el.closest('.pill')){ el.checked = true; el.dispatchEvent(new Event('change', {bubbles:true})); }
-    });
-    Object.keys(d.fields||{}).forEach(id=>{
-      const el = document.getElementById(id);
-      if(el){ el.value = d.fields[id]; el.dispatchEvent(new Event('change', {bubbles:true})); }
-    });
-    if(d.shift && typeof setShift==='function') setShift(d.shift);
-  }catch(e){ console.warn('draft restore partial', e); }
-  restoringDraft = false;
-  discardDraft();
-  goToStep(d.step || 1);
-}
-(function offerDraft(){
-  const d = readDraft();
-  if(!d) { refreshStepBar(); return; }
-  const bar = document.getElementById('draftBar'), txt = document.getElementById('draftBarText');
-  const when = new Date(d.at||Date.now());
-  if(txt) txt.textContent = 'Unfinished entry from ' + when.toLocaleString([], {weekday:'short', hour:'2-digit', minute:'2-digit'}) + ' \u2014 step ' + (d.step||1) + ' of ' + TOTAL_STEPS + '.';
-  if(bar) bar.classList.add('show');
-  refreshStepBar();
-})();
 </script>
 </body>
 </html>
