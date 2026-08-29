@@ -134,8 +134,12 @@
 <div class="step" data-step="2" id="step2">
 <div class="card">
     <h2>Devices &amp; Interventions <span class="tag">ticking these reveals a documentation section below</span></h2>
-    <div class="hint">Lines, feeding &amp; drains</div>
-    <div class="pillgroup" id="devGroupLines"></div>
+    <div class="hint">Vascular access &amp; IV therapy</div>
+    <div class="pillgroup" id="devGroupVascular"></div>
+    <div class="hint" style="margin-top:12px;">Feeding &amp; GI</div>
+    <div class="pillgroup" id="devGroupFeeding"></div>
+    <div class="hint" style="margin-top:12px;">Wounds &amp; drains</div>
+    <div class="pillgroup" id="devGroupWounds"></div>
     <div class="hint" style="margin-top:12px;">Analgesia catheters/pumps</div>
     <div class="pillgroup" id="devGroupAnalgesia"></div>
     <div class="hint" style="margin-top:12px;">Rib fracture &amp; metabolic pathways</div>
@@ -398,13 +402,38 @@
       <fieldset>
         <legend>D — Disability</legend>
         <div class="opt"><input type="checkbox" class="optD" data-key="D_gcs" checked><label>Alert, GCS (uses GCS fields)</label></div>
-        <div class="opt"><input type="checkbox" class="optD" data-key="D_pearl" checked><label>PEARL</label></div>
         <div class="opt"><input type="checkbox" class="optD" data-key="D_pain" checked><label>Pain (uses Pain field)</label></div>
         <div class="opt"><input type="checkbox" class="optD" data-key="D_bm" checked><label>Blood glucose (uses BM field)</label></div>
         <div class="opt"><input type="checkbox" id="D_baseline_chk" onchange="toggleShow('D_baseline_chk','D_baseline_reveal'); renderNEWS2();"><label>GCS below 15 is patient's known baseline (e.g. dementia) — not a new change</label></div>
         <div class="reveal" id="D_baseline_reveal"><input type="text" id="D_baseline_text" placeholder="condition (optional) — defaults to 'known dementia/cognitive impairment'"></div>
         <div class="opt"><input type="checkbox" id="D_other_chk" onchange="toggleShow('D_other_chk','D_other_reveal'); renderNEWS2();"><label>New confusion / neuro concern (acute change)</label></div>
         <div class="reveal" id="D_other_reveal"><input type="text" id="D_other_text" placeholder="Describe neuro/confusion finding"></div>
+
+        <div class="hint" style="margin-top:10px;">Pupils</div>
+        <div class="row2">
+          <div><label class="field">Size L (mm)</label><select id="D_pupil_L_size"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
+          <div><label class="field">Size R (mm)</label><select id="D_pupil_R_size"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
+        </div>
+        <div class="row2">
+          <div><label class="field">Reactivity L</label><select id="D_pupil_L_react"><option value="Brisk">Brisk</option><option value="Sluggish">Sluggish</option><option value="Fixed">Fixed/non-reactive</option></select></div>
+          <div><label class="field">Reactivity R</label><select id="D_pupil_R_react"><option value="Brisk">Brisk</option><option value="Sluggish">Sluggish</option><option value="Fixed">Fixed/non-reactive</option></select></div>
+        </div>
+
+        <div class="hint" style="margin-top:10px;">Muscle power (MRC scale, 5 = normal)</div>
+        <div class="row">
+          <div><label class="field">Left arm</label><select id="D_power_LA">
+            <option value="0">0 - No movement</option><option value="1">1 - Flicker only</option><option value="2">2 - Gravity eliminated</option><option value="3">3 - Against gravity</option><option value="4">4 - Against resistance</option><option value="5" selected>5 - Normal power</option>
+          </select></div>
+          <div><label class="field">Right arm</label><select id="D_power_RA">
+            <option value="0">0 - No movement</option><option value="1">1 - Flicker only</option><option value="2">2 - Gravity eliminated</option><option value="3">3 - Against gravity</option><option value="4">4 - Against resistance</option><option value="5" selected>5 - Normal power</option>
+          </select></div>
+          <div><label class="field">Left leg</label><select id="D_power_LL">
+            <option value="0">0 - No movement</option><option value="1">1 - Flicker only</option><option value="2">2 - Gravity eliminated</option><option value="3">3 - Against gravity</option><option value="4">4 - Against resistance</option><option value="5" selected>5 - Normal power</option>
+          </select></div>
+          <div><label class="field">Right leg</label><select id="D_power_RL">
+            <option value="0">0 - No movement</option><option value="1">1 - Flicker only</option><option value="2">2 - Gravity eliminated</option><option value="3">3 - Against gravity</option><option value="4">4 - Against resistance</option><option value="5" selected>5 - Normal power</option>
+          </select></div>
+        </div>
       </fieldset>
 
       <fieldset>
@@ -613,6 +642,7 @@
 <!-- BLOOD RESULTS -->
   <div class="card">
     <h2>Blood Results <span class="tag">optional</span></h2>
+    <div class="hint" id="tpnRefeedingHint" style="display:none; color:var(--primary); font-weight:700; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius);">Patient on TPN \u2014 remember to check refeeding bloods (Phosphate, Potassium, Magnesium) daily. <button type="button" class="reword" style="padding:4px 10px; font-size:0.72rem; margin-left:6px;" onclick="addRefeedingBloodEntries()">+ Add refeeding bloods</button></div>
     <div class="opt"><input type="checkbox" id="BR_chk" onchange="toggleShow('BR_chk','BR_reveal')"><label>Document deranged blood result(s) this shift</label></div>
     <div class="reveal" id="BR_reveal">
       <div id="bloodResultEntriesContainer"></div>
@@ -903,21 +933,27 @@ const PROCEDURES = [
   {id:'hemiarthroplasty', label:'Hemiarthroplasty'},
 ];
 
-const DEVICES_LINES = [
+const DEVICES_VASCULAR = [
   {id:'cvc', label:'CVC'},
   {id:'picc', label:'PICC'},
   {id:'pvd', label:'Peripheral cannula (PVD)'},
+  {id:'ivi', label:'IV fluids (IVI)'},
+  {id:'ivabx', label:'IV/PO Antibiotics'},
+  {id:'artline', label:'Arterial line'},
+  {id:'bloodtransfusion', label:'Blood transfusion'},
+];
+
+const DEVICES_FEEDING = [
   {id:'ngtube', label:'NG tube'},
   {id:'jejunostomy', label:'Jejunostomy (feeding tube)'},
   {id:'tpn', label:'TPN'},
-  {id:'ivi', label:'IV fluids (IVI)'},
-  {id:'ivabx', label:'IV/PO Antibiotics'},
   {id:'stoma', label:'Stoma'},
+];
+
+const DEVICES_WOUNDS = [
   {id:'drain', label:'Wound drain'},
   {id:'plaster', label:'Neurovascular obs / Cast check'},
   {id:'chestdrain', label:'Chest drain'},
-  {id:'artline', label:'Arterial line'},
-  {id:'bloodtransfusion', label:'Blood transfusion'},
   {id:'exfix', label:'External fixator (pin site care)'},
   {id:'washout', label:'Washout / open wound management'},
 ];
@@ -986,12 +1022,30 @@ function buildPills(container, list, prefix, onchangeExtra){
 }
 buildPills('dxGroup', DIAGNOSES, 'dx');
 buildPills('procGroup', PROCEDURES, 'proc');
-buildPills('devGroupLines', DEVICES_LINES, 'dev', renderDeviceSectionsSafe);
+buildPills('devGroupVascular', DEVICES_VASCULAR, 'dev', renderDeviceSectionsSafe);
+buildPills('devGroupFeeding', DEVICES_FEEDING, 'dev', renderDeviceSectionsSafe);
+buildPills('devGroupWounds', DEVICES_WOUNDS, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupAnalgesia', DEVICES_ANALGESIA, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupPathway', DEVICES_PATHWAY, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupCardiac', DEVICES_CARDIAC, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupSymptoms', DEVICES_SYMPTOMS, 'dev', renderDeviceSectionsSafe);
-function renderDeviceSectionsSafe(){ renderDeviceSections(); }
+function renderDeviceSectionsSafe(){ renderDeviceSections(); updateTPNRefeedingHint(); }
+function updateTPNRefeedingHint(){
+  const tpnTicked = document.querySelector('#dev_tpn input')?.checked;
+  const hint = document.getElementById('tpnRefeedingHint');
+  if(hint) hint.style.display = tpnTicked ? 'block' : 'none';
+}
+function addRefeedingBloodEntries(){
+  document.getElementById('BR_chk').checked = true;
+  toggleShow('BR_chk','BR_reveal');
+  const params = ['Phosphate','Potassium (K)','Magnesium (Mg)'];
+  params.forEach((param, idx)=>{
+    if(idx>0) addBloodResultEntry();
+    const i = bloodResultEntryCount;
+    const sel = document.getElementById('BR_param_'+i);
+    if(sel) sel.value = param;
+  });
+}
 
 function setShift(s){
   document.querySelectorAll('.shiftbtn').forEach(b=>b.classList.toggle('active', b.dataset.shift===s));
@@ -1492,7 +1546,6 @@ const STATIC_PHRASES = {
   C_no_poor_circ: ["No signs of poor circulation, peripheral oedema, or cyanosis.", "No peripheral oedema, cyanosis or signs of poor perfusion.", "Peripheries warm and well perfused, no oedema or cyanosis noted."],
   C_no_cp: ["No chest pain or palpitations reported.", "Denies chest pain or palpitations.", "No cardiac-type pain or palpitations at this time."],
   C_bp_med: ["Antihypertensive/hypotension medication given as prescribed.", "Blood pressure medication administered as charted.", "Cardiac/BP medication given per prescription."],
-  D_pearl: ["Pupils equal, round and reactive to light (PEARL).", "PEARL bilaterally.", "Pupils equal and reactive to light, no anisocoria noted."],
   E_pressure_intact: ["Pressure areas intact; skin warm, dry and intact with no rashes, wounds or pressure ulcers noted.", "Skin integrity intact, warm and dry; no pressure damage or rashes observed.", "Pressure areas checked and intact, no skin breakdown noted."],
   E_turned: ["Turned and repositioned; pressure areas checked and recorded, appear intact.", "Repositioned as per turning chart; pressure areas checked, no concerns noted.", "Assisted to reposition; pressure areas inspected and documented as intact."],
   E_skinmap: ["Skin map completed and pressure areas documented as per SSKIN bundle.", "Skin map done this shift; pressure areas checked and recorded.", "Skin integrity mapped and documented per SSKIN protocol, no new areas of concern."],
@@ -1961,17 +2014,19 @@ const DEVICE_TEMPLATES = {
     title:'TPN',
     fields:[
       {id:'tpn_line', label:'Delivered via', type:'select', options:['CVC','PICC']},
+      {id:'tpn_bag', label:'Bag type', type:'select_other', options:['Nutriflex Omega Special 625ml','Nutriflex Omega Special 1250ml','Nutriflex Omega Special 1875ml','Nutriflex Omega Special 2500ml','Nutriflex Omega Peri (peripheral-compatible)','Nutriflex Omega Plus','Nutriflex Lipid Special','Kabiven','Kabiven Peripheral','SmofKabiven','SmofKabiven Peripheral','Olimel N4E','Olimel N7E','Olimel N9E','Refeeding regimen (reduced rate/lower calorie, per dietitian)']},
       {id:'tpn_start', label:'Start time', type:'text', placeholder:'e.g. 20:00'},
       {id:'tpn_rate', label:'Rate ml/hr', type:'number'},
       {id:'tpn_duration', label:'Running over (hours)', type:'number'},
       {id:'tpn_refeed', label:'Refeeding syndrome risk', type:'select', options:['Not yet assessed','Low risk','High risk']},
     ],
-    build:(f)=>{ const line=f.tpn_line||'[line]', rate=f.tpn_rate||'[X]', start=f.tpn_start, dur=f.tpn_duration, refeed=f.tpn_refeed;
+    build:(f)=>{ const line=f.tpn_line||'[line]', bag=f.tpn_bag, rate=f.tpn_rate||'[X]', start=f.tpn_start, dur=f.tpn_duration, refeed=f.tpn_refeed;
       const startTxt = start ? ` commenced at ${start}` : '';
       const durTxt = dur ? ` over ${dur} hours` : '';
+      const bagTxt = bag ? ` (${bag})` : '';
       let base = pick([
-        `TPN${startTxt} running via ${line} at ${rate}ml/hr${durTxt} as prescribed. Line site clean, dry and intact with no signs of infection. Blood glucose monitored regularly and within normal limits. Fluid balance chart maintained accurately.`,
-        `TPN infusing via ${line} at ${rate}ml/hr${durTxt}${start? ', started at '+start:''}, line site clean and intact, no infection noted. Blood glucose monitored and within normal range; fluid balance chart up to date.`
+        `TPN${bagTxt}${startTxt} running via ${line} at ${rate}ml/hr${durTxt} as prescribed. Line site clean, dry and intact with no signs of infection. Blood glucose monitored regularly and within normal limits. Fluid balance chart maintained accurately.`,
+        `TPN${bagTxt} infusing via ${line} at ${rate}ml/hr${durTxt}${start? ', started at '+start:''}, line site clean and intact, no infection noted. Blood glucose monitored and within normal range; fluid balance chart up to date.`
       ]);
       if(refeed==='High risk'){
         base += ' ' + pick([
@@ -2183,16 +2238,19 @@ const DEVICE_TEMPLATES = {
   },
   artline: {
     title:'Arterial line',
+    gasPrefix:'artline',
     fields:[
       {id:'al_site', label:'Site', type:'select', options:['Left radial','Right radial','Femoral','Other']},
       {id:'al_waveform', label:'Waveform', type:'select', options:['Good waveform','Dampened']},
       {id:'al_dressing', label:'Dressing/site', type:'select', options:['Clean and dry','Red/swollen']},
+      ...abgFields('artline'),
     ],
     build:(f)=>{ const site=f.al_site||'[site]', wave=f.al_waveform||'Good waveform', dress=f.al_dressing||'Clean and dry';
-      return pick([
+      let base = pick([
         `Arterial line in situ at ${site.toLowerCase()}, ${wave.toLowerCase()}, dressing ${dress.toLowerCase()}. Used for continuous BP monitoring and blood sampling. No signs of ischaemia distally.`,
         `Arterial line (${site.toLowerCase()}) remains in situ, ${wave.toLowerCase()}, site ${dress.toLowerCase()}. Distal circulation intact, no ischaemic changes.`
-      ]); }
+      ]);
+      return base + abgText(f,'artline'); }
   },
   bloodtransfusion: {
     title:'Blood transfusion',
@@ -3043,6 +3101,23 @@ function buildNoteText(){
     lines.push(GCS_BASELINE_PHRASES(getVal('D_baseline_text')||'dementia/known cognitive impairment'));
   }
   if(document.getElementById('D_other_chk').checked) lines.push(`Neurological concern (new/acute): ${getVal('D_other_text')}`);
+
+  const pLSize=getVal('D_pupil_L_size'), pRSize=getVal('D_pupil_R_size'), pLReact=getVal('D_pupil_L_react'), pRReact=getVal('D_pupil_R_react');
+  const pupilsUnequalSize = pLSize !== pRSize;
+  const pupilsAbnormalReact = pLReact!=='Brisk' || pRReact!=='Brisk';
+  if(!pupilsUnequalSize && !pupilsAbnormalReact){
+    lines.push(pick([`Pupils equal, round and reactive to light (PEARL), ${pLSize}mm bilaterally.`, `PEARL bilaterally, ${pLSize}mm, both brisk.`, `Pupils equal and reactive to light, no anisocoria noted (${pLSize}mm, brisk).`]));
+  } else {
+    lines.push(`Pupils: L ${pLSize}mm (${pLReact.toLowerCase()}), R ${pRSize}mm (${pRReact.toLowerCase()})${pupilsUnequalSize?' \u2014 unequal size (anisocoria)':''}. Surgical SHO informed urgently, concern for raised intracranial pressure/neurological deterioration.`);
+  }
+
+  const powerLA=getVal('D_power_LA'), powerRA=getVal('D_power_RA'), powerLL=getVal('D_power_LL'), powerRL=getVal('D_power_RL');
+  const powers = [powerLA,powerRA,powerLL,powerRL];
+  if(powers.every(p=>p==='5')){
+    lines.push(pick(['Muscle power grossly normal in all four limbs (5/5).', 'Power 5/5 in all four limbs, no focal weakness noted.', 'Full muscle power bilaterally, upper and lower limbs (5/5).']));
+  } else {
+    lines.push(`Muscle power \u2014 left arm ${powerLA}/5, right arm ${powerRA}/5, left leg ${powerLL}/5, right leg ${powerRL}/5. New/asymmetrical weakness noted \u2014 surgical SHO informed urgently, neurological/spinal review considered.`);
+  }
   if(getVal('v_pain') && getVal('v_pain')!=='none'){
     const painMeds = [];
     if(document.getElementById('pain_paracetamol_po').checked) painMeds.push('Paracetamol PO');
