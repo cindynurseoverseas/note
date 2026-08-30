@@ -140,6 +140,8 @@
     <div class="pillgroup" id="devGroupFeeding"></div>
     <div class="hint" style="margin-top:12px;">Wounds &amp; drains</div>
     <div class="pillgroup" id="devGroupWounds"></div>
+    <div class="hint" style="margin-top:12px;">General care</div>
+    <div class="pillgroup" id="devGroupGeneral"></div>
     <div class="hint" style="margin-top:12px;">Analgesia catheters/pumps</div>
     <div class="pillgroup" id="devGroupAnalgesia"></div>
     <div class="hint" style="margin-top:12px;">Rib fracture &amp; metabolic pathways</div>
@@ -496,13 +498,24 @@
       </optgroup>
       <option value="bedbound">Bed-bound / not mobilising</option>
     </select>
+
+    <div class="opt" style="margin-top:10px;"><input type="checkbox" id="mob_extra_chk" onchange="toggleShow('mob_extra_chk','mob_extra_reveal')"><label>Add extra interventions (optional — e.g. limb exercises for bed-bound patients)</label></div>
+    <div class="reveal" id="mob_extra_reveal">
+      <div class="opt"><input type="checkbox" id="mob_passive"><label>Passive limb exercises carried out</label></div>
+      <div class="opt"><input type="checkbox" id="mob_active"><label>Active limb exercises encouraged</label></div>
+      <div class="opt"><input type="checkbox" id="mob_reposition"><label>Regular repositioning/turns carried out</label></div>
+      <div class="opt"><input type="checkbox" id="mob_physio"><label>Physiotherapy input/review</label></div>
+      <div class="opt"><input type="checkbox" id="mob_chestphysio"><label>Chest physiotherapy given</label></div>
+      <div class="opt"><input type="checkbox" id="mob_splints"><label>Splints/positioning aids in use</label></div>
+      <input type="text" id="mob_extra_other" placeholder="other intervention (optional)" style="margin-top:6px;">
+    </div>
   </div>
 
   <div class="grid-top">
     <!-- DIET -->
     <div class="card">
       <h2>Diet <span class="tag">IDDSI food levels 3&ndash;7</span></h2>
-      <select id="dietSel">
+      <select id="dietSel" onchange="toggleDietFluidReason()">
         <option value="normal">Normal diet, no modification (IDDSI Level 7 – Regular)</option>
         <option value="L7">IDDSI Level 7 – Easy to Chew</option>
         <option value="L6">IDDSI Level 6 – Soft &amp; Bite-Sized</option>
@@ -514,12 +527,29 @@
         <option value="partial">Partial — refused earlier, some intake later</option>
       </select>
       <div class="hint">IDDSI food levels only run 3&ndash;7 (levels 0&ndash;2 are drinks-only) — Level 7 covers both "regular, no modification" and "easy to chew", so pick whichever fits.</div>
+      <div class="reveal" id="dietReasonReveal">
+        <label class="field">Reason for modification (optional)</label>
+        <select id="dietReasonSel" onchange="toggleOtherField('dietReasonSel')">
+          <option value="">—</option>
+          <option>Pre-operative fasting</option>
+          <option>Post-operative recovery/bowel rest</option>
+          <option>Dysphagia — SALT assessment pending</option>
+          <option>Dysphagia — SALT assessment completed, diet as recommended</option>
+          <option>Reduced conscious level affecting safe swallow</option>
+          <option>Bowel obstruction/ileus</option>
+          <option>Nausea/vomiting</option>
+          <option>Aspiration risk</option>
+          <option>Awaiting endoscopy/procedure</option>
+          <option value="Other (specify)">Other (specify)</option>
+        </select>
+        <input type="text" id="dietReasonSel_other" placeholder="specify..." style="display:none; margin-top:4px;">
+      </div>
     </div>
 
     <!-- FLUIDS -->
     <div class="card">
       <h2>Fluids <span class="tag">IDDSI drink levels 0&ndash;4</span></h2>
-      <select id="fluidSel">
+      <select id="fluidSel" onchange="toggleDietFluidReason()">
         <option value="free">Free fluids, thin/unmodified (IDDSI Level 0)</option>
         <option value="clear">Clear fluids only</option>
         <option value="sip">Sip water only</option>
@@ -529,6 +559,21 @@
         <option value="L4f">IDDSI Level 4 – Extremely Thick</option>
         <option value="nbm">Nil by mouth (no oral fluids)</option>
       </select>
+      <div class="reveal" id="fluidReasonReveal">
+        <label class="field">Reason for modification (optional)</label>
+        <select id="fluidReasonSel" onchange="toggleOtherField('fluidReasonSel')">
+          <option value="">—</option>
+          <option>Pre-operative fasting</option>
+          <option>Post-operative recovery/bowel rest</option>
+          <option>Dysphagia — SALT assessment pending (thickened fluids)</option>
+          <option>Dysphagia — SALT assessment completed, fluids as recommended</option>
+          <option>Fluid restriction (cardiac/renal/hepatic/hyponatraemia)</option>
+          <option>Bowel obstruction/ileus</option>
+          <option>Awaiting endoscopy/procedure</option>
+          <option value="Other (specify)">Other (specify)</option>
+        </select>
+        <input type="text" id="fluidReasonSel_other" placeholder="specify..." style="display:none; margin-top:4px;">
+      </div>
 
       <div class="opt" style="margin-top:10px;"><input type="checkbox" id="fluidRestrict_chk" onchange="toggleShow('fluidRestrict_chk','fluidRestrict_reveal')"><label>Fluid restriction in place</label></div>
       <div class="reveal" id="fluidRestrict_reveal"><input type="text" id="fluidRestrict_text" placeholder="e.g. restricted to 1500ml/24hr, currently at 800ml this shift"></div>
@@ -642,7 +687,7 @@
 <!-- BLOOD RESULTS -->
   <div class="card">
     <h2>Blood Results <span class="tag">optional</span></h2>
-    <div class="hint" id="tpnRefeedingHint" style="display:none; color:var(--primary); font-weight:700; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius);">Patient on TPN \u2014 remember to check refeeding bloods (Phosphate, Potassium, Magnesium) daily. <button type="button" class="reword" style="padding:4px 10px; font-size:0.72rem; margin-left:6px;" onclick="addRefeedingBloodEntries()">+ Add refeeding bloods</button></div>
+    <div class="hint" id="tpnRefeedingHint" style="display:none; color:var(--primary); font-weight:700; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius);">Patient on TPN — remember to check refeeding bloods (Phosphate, Potassium, Magnesium) daily. <button type="button" class="reword" style="padding:4px 10px; font-size:0.72rem; margin-left:6px;" onclick="addRefeedingBloodEntries()">+ Add refeeding bloods</button></div>
     <div class="opt"><input type="checkbox" id="BR_chk" onchange="toggleShow('BR_chk','BR_reveal')"><label>Document deranged blood result(s) this shift</label></div>
     <div class="reveal" id="BR_reveal">
       <div id="bloodResultEntriesContainer"></div>
@@ -958,6 +1003,10 @@ const DEVICES_WOUNDS = [
   {id:'washout', label:'Washout / open wound management'},
 ];
 
+const DEVICES_GENERAL = [
+  {id:'vte_mech', label:'VTE mechanical prophylaxis (Flowtron/TEDs)'},
+];
+
 const DEVICES_ANALGESIA = [
   {id:'pca', label:'PCA'},
   {id:'rsc', label:'Rectus Sheath Catheter'},
@@ -1025,6 +1074,7 @@ buildPills('procGroup', PROCEDURES, 'proc');
 buildPills('devGroupVascular', DEVICES_VASCULAR, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupFeeding', DEVICES_FEEDING, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupWounds', DEVICES_WOUNDS, 'dev', renderDeviceSectionsSafe);
+buildPills('devGroupGeneral', DEVICES_GENERAL, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupAnalgesia', DEVICES_ANALGESIA, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupPathway', DEVICES_PATHWAY, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupCardiac', DEVICES_CARDIAC, 'dev', renderDeviceSectionsSafe);
@@ -1073,6 +1123,12 @@ function uncheckPeers(el, ...peerIds){
 document.getElementById('B_rib_chk').addEventListener('change', e=>{
   document.getElementById('B_rib_reveal').style.display = e.target.checked ? 'grid' : 'none';
 });
+function toggleDietFluidReason(){
+  const dietRev = document.getElementById('dietReasonReveal');
+  if(dietRev) dietRev.classList.toggle('show', getVal('dietSel')!=='normal');
+  const fluidRev = document.getElementById('fluidReasonReveal');
+  if(fluidRev) fluidRev.classList.toggle('show', getVal('fluidSel')!=='free');
+}
 function toggleBowel(){
   const v = document.getElementById('bowelSel').value;
   document.getElementById('bowelOpenedReveal').classList.toggle('show', v==='opened');
@@ -1114,7 +1170,7 @@ function renderWoundEntries(){
     html += `<div class="devicecard card" style="margin-bottom:10px;">
       <div class="row2">
         <div><label class="field">Site</label><input type="text" id="E_wound_site_${i}" placeholder="e.g. RIF, midline"></div>
-        <div><label class="field">Dressing type</label><select id="E_wound_dressing_${i}">
+        <div><label class="field">Dressing type</label><select id="E_wound_dressing_${i}" onchange="toggleOtherField('E_wound_dressing_${i}')">
           <option value="simple">Simple/dry dressing (e.g. Mepore)</option>
           <option value="absorbent">Absorbent dressing (e.g. Zetuvit)</option>
           <option value="foam">Foam dressing (e.g. Mepilex/Allevyn)</option>
@@ -1125,7 +1181,9 @@ function renderWoundEntries(){
           <option value="glue">Glue/steri-strips</option>
           <option value="staples">Staples/clips</option>
           <option value="none">No dressing / wound exposed</option>
-        </select></div>
+          <option value="Other (specify)">Other (specify)</option>
+        </select>
+        <input type="text" id="E_wound_dressing_${i}_other" placeholder="specify dressing..." style="display:none; margin-top:4px;"></div>
       </div>
       <div class="row2">
         <div><label class="field">Condition</label><select id="E_wound_condition_${i}">
@@ -1140,6 +1198,7 @@ function renderWoundEntries(){
   }
   container.innerHTML = html;
   container.querySelectorAll('input, select').forEach(el=>{ if(saved.hasOwnProperty(el.id)) el.value = saved[el.id]; });
+  for(let i=1;i<=woundEntryCount;i++) toggleOtherField('E_wound_dressing_'+i);
   const removeBtn = document.getElementById('woundEntryRemoveBtn');
   if(removeBtn) removeBtn.style.display = woundEntryCount>1 ? 'inline-block' : 'none';
 }
@@ -1906,6 +1965,21 @@ const ELECTROLYTE_ABNORMALITIES = [
 ];
 
 const DEVICE_TEMPLATES = {
+  vte_mech: {
+    title:'VTE mechanical prophylaxis',
+    fields:[
+      {id:'vte_type', label:'Type', type:'select', options:['Flowtron boots (intermittent pneumatic compression)','TED stockings','Both Flowtron and TEDs']},
+      {id:'vte_status', label:'Status', type:'select', options:['In situ and in use','Removed/offloaded while mobilising','Offloaded for pressure area care']},
+      {id:'vte_notes', label:'Notes (optional)', type:'text', placeholder:'e.g. offloaded using a pillow, reapplied after mobilising'},
+    ],
+    build:(f)=>{ const type=f.vte_type||'Flowtron boots (intermittent pneumatic compression)', status=f.vte_status||'In situ and in use', notes=f.vte_notes;
+      let base = pick([
+        `${type} ${status.toLowerCase()}. No signs of pressure damage or circulatory compromise to lower limbs.`,
+        `${type} ${status.toLowerCase()}; skin checked, no pressure areas or circulatory concerns noted.`
+      ]);
+      if(notes) base += ` ${notes}.`;
+      return base; }
+  },
   pca: {
     title:'PCA',
     fields:[
@@ -3173,7 +3247,8 @@ function buildNoteText(){
       const notes = getVal('E_wound_text_'+i);
       if(!site && !notes) continue;
       const siteTxt = site || '[site]';
-      const dressing = dressingMap[getVal('E_wound_dressing_'+i)] || 'a dressing';
+      const dressingSel = getVal('E_wound_dressing_'+i);
+      const dressing = dressingSel==='Other (specify)' ? (getVal('E_wound_dressing_'+i+'_other')||'a dressing') : (dressingMap[dressingSel] || 'a dressing');
       const condition = conditionMap[getVal('E_wound_condition_'+i)] || 'dry and intact';
       let line = pick([
         `Wound at ${siteTxt} covered with ${dressing}, ${condition}.`,
@@ -3227,15 +3302,39 @@ function buildNoteText(){
   if(mobSelected && MOBILITY_PHRASES[mobSelected]){
     lines.push('Mobility:');
     lines.push(pick(MOBILITY_PHRASES[mobSelected]));
+    if(document.getElementById('mob_extra_chk').checked){
+      const extras = [];
+      if(document.getElementById('mob_passive').checked) extras.push('passive limb exercises carried out');
+      if(document.getElementById('mob_active').checked) extras.push('active limb exercises encouraged');
+      if(document.getElementById('mob_reposition').checked) extras.push('regular repositioning/turns carried out');
+      if(document.getElementById('mob_physio').checked) extras.push('physiotherapy input/review');
+      if(document.getElementById('mob_chestphysio').checked) extras.push('chest physiotherapy given');
+      if(document.getElementById('mob_splints').checked) extras.push('splints/positioning aids in use');
+      const otherExtra = getVal('mob_extra_other');
+      if(otherExtra) extras.push(otherExtra);
+      if(extras.length) lines.push(capitalize(extras.join(', ')) + '.');
+    }
     lines.push('');
   }
 
   const dietKeyMap = { normal:'diet_normal', L7:'diet_L7', L6:'diet_L6', L5:'diet_L5', L4:'diet_L4', L3:'diet_L3', soupsweet:'diet_soupsweet', nbm:'diet_nbm', partial:'diet_partial' };
   lines.push('Diet & Fluids:');
-  lines.push(pick(STATIC_PHRASES[dietKeyMap[getVal('dietSel')]]));
+  let dietLine = pick(STATIC_PHRASES[dietKeyMap[getVal('dietSel')]]);
+  if(getVal('dietSel')!=='normal'){
+    let dietReason = getVal('dietReasonSel');
+    if(dietReason==='Other (specify)') dietReason = getVal('dietReasonSel_other');
+    if(dietReason) dietLine += ` Reason: ${dietReason}.`;
+  }
+  lines.push(dietLine);
 
   const fluidKeyMap = { free:'fluid_free', clear:'fluid_clear', sip:'fluid_sip', L1:'fluid_L1', L2:'fluid_L2', L3f:'fluid_L3f', L4f:'fluid_L4f', nbm:'fluid_nbm' };
-  lines.push(pick(STATIC_PHRASES[fluidKeyMap[getVal('fluidSel')]]));
+  let fluidLine = pick(STATIC_PHRASES[fluidKeyMap[getVal('fluidSel')]]);
+  if(getVal('fluidSel')!=='free'){
+    let fluidReason = getVal('fluidReasonSel');
+    if(fluidReason==='Other (specify)') fluidReason = getVal('fluidReasonSel_other');
+    if(fluidReason) fluidLine += ` Reason: ${fluidReason}.`;
+  }
+  lines.push(fluidLine);
   if(document.getElementById('fluidRestrict_chk').checked){
     const r = getVal('fluidRestrict_text')||'[restriction detail]';
     lines.push(pick([`Fluid restriction in place: ${r}.`, `Fluids restricted \u2014 ${r}.`]));
