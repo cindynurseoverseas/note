@@ -117,6 +117,18 @@
     <div class="card">
       <h2>Procedure <span class="tag">optional — leave blank if no surgery</span></h2>
       <div class="pillgroup" id="procGroup"></div>
+      <div class="opt" style="margin-top:10px;"><input type="checkbox" id="postop_chk" onchange="toggleShow('postop_chk','postop_reveal'); applyPostOpDefaults();"><label>Post-operative patient</label></div>
+      <div class="reveal" id="postop_reveal">
+        <label class="field">Post-operative day</label>
+        <select id="postop_day" onchange="applyPostOpDefaults()">
+          <option value="Day of surgery">Day of surgery</option>
+          <option value="Day 1 post-op">Day 1 post-op</option>
+          <option value="Day 2 post-op">Day 2 post-op</option>
+          <option value="Day 3 post-op">Day 3 post-op</option>
+          <option value="Day 4+ post-op">Day 4+ post-op</option>
+        </select>
+        <div class="hint">Ticking this applies sensible post-operative defaults through the rest of the form (diet/fluid reason, mobilisation and VTE prompts) \u2014 everything stays fully editable.</div>
+      </div>
     </div>
     <div class="card">
       <h2>Shift</h2>
@@ -141,6 +153,7 @@
     <div class="hint" style="margin-top:12px;">Wounds &amp; drains</div>
     <div class="pillgroup" id="devGroupWounds"></div>
     <div class="hint" style="margin-top:12px;">General care</div>
+    <div class="hint" id="postOpVteHint" style="display:none; color:var(--primary); font-weight:600; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius); margin-bottom:6px;">Post-operative patient \u2014 remember to check VTE mechanical prophylaxis (Flowtron/TEDs) is prescribed and in use.</div>
     <div class="pillgroup" id="devGroupGeneral"></div>
     <div class="hint" style="margin-top:12px;">Analgesia catheters/pumps</div>
     <div class="pillgroup" id="devGroupAnalgesia"></div>
@@ -187,6 +200,23 @@
     </div>
     <label class="field">Handover time (optional)</label>
     <input type="text" id="handoverTime" placeholder="defaults to 07:00 / 19:00 — or type 0730, 13:30, 7am...">
+
+    <div class="opt" style="margin-top:12px;"><input type="checkbox" id="recovery_chk" onchange="toggleShow('recovery_chk','recovery_reveal')"><label>Receiving patient from recovery (post-operative admission to ward)</label></div>
+    <div class="reveal" id="recovery_reveal">
+      <div class="hint">Post-operative admission checklist (tick as completed):</div>
+      <div class="opt"><input type="checkbox" id="rec_sbar" checked><label>SBAR/verbal handover received from recovery/anaesthetic staff</label></div>
+      <div class="opt"><input type="checkbox" id="rec_airway" checked><label>Airway patent, breathing adequately, oxygen as prescribed</label></div>
+      <div class="opt"><input type="checkbox" id="rec_obs" checked><label>Vital signs stable on arrival, NEWS2 checked (see Assessment)</label></div>
+      <div class="opt"><input type="checkbox" id="rec_pain" checked><label>Pain assessed and analgesia plan reviewed</label></div>
+      <div class="opt"><input type="checkbox" id="rec_wound" checked><label>Wound/dressing and any drains checked</label></div>
+      <div class="opt"><input type="checkbox" id="rec_ivi" checked><label>IV fluids/cannula site checked and patent</label></div>
+      <div class="opt"><input type="checkbox" id="rec_nausea" checked><label>Nausea/vomiting assessed, antiemetics given if needed</label></div>
+      <div class="opt"><input type="checkbox" id="rec_vte" checked><label>VTE prophylaxis prescribed and commenced</label></div>
+      <div class="opt"><input type="checkbox" id="rec_consent" checked><label>Consent form and operation note reviewed/filed</label></div>
+      <div class="opt"><input type="checkbox" id="rec_plan" checked><label>Post-operative instructions from surgical/anaesthetic team reviewed</label></div>
+      <div class="opt"><input type="checkbox" id="rec_orientate" checked><label>Patient orientated to ward environment, call bell within reach</label></div>
+      <input type="text" id="rec_other" placeholder="other admission note (optional)" style="margin-top:6px;">
+    </div>
   </div>
 
   
@@ -469,6 +499,7 @@
 <!-- MOBILITY -->
   <div class="card">
     <h2>Mobility</h2>
+    <div class="hint" id="postOpMobHint" style="display:none; color:var(--primary); font-weight:600; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius); margin-bottom:8px;">Post-operative patient \u2014 early mobilisation is a key recovery priority; encourage sitting out/mobilising as able unless otherwise advised.</div>
     <select id="mobilitySelect">
       <optgroup label="Mobile (no walking aid)">
         <option value="mobile_indep">Independent</option>
@@ -952,12 +983,25 @@ const DIAGNOSES = [
   {id:'tib_fib_fracture', label:'Tibia/fibula fracture'},
   {id:'septic_joint', label:'Septic arthritis / joint infection'},
   {id:'traumatic_wound', label:'Traumatic wound/laceration'},
+  {id:'colorectal_cancer', label:'Colorectal cancer / bowel tumour'},
+  {id:'rectal_cancer', label:'Rectal cancer'},
+  {id:'colonic_polyp', label:'Colonic polyp(s)'},
+  {id:'crohns', label:"Crohn's disease"},
+  {id:'ulcerative_colitis', label:'Ulcerative colitis'},
+  {id:'volvulus', label:'Sigmoid volvulus'},
+  {id:'bowel_fistula', label:'Enterocutaneous/anorectal fistula'},
+  {id:'rectal_prolapse', label:'Rectal prolapse'},
 ];
 
 const PROCEDURES = [
   {id:'hartmanns', label:"Hartmann's procedure"},
-  {id:'hemicolectomy', label:'Hemicolectomy'},
+  {id:'right_hemicolectomy', label:'Right hemicolectomy'},
+  {id:'left_hemicolectomy', label:'Left hemicolectomy'},
+  {id:'sigmoid_colectomy', label:'Sigmoid colectomy'},
   {id:'colectomy', label:'Colectomy'},
+  {id:'total_colectomy', label:'Total colectomy'},
+  {id:'panproctocolectomy', label:'Panproctocolectomy'},
+  {id:'anastomosis', label:'Bowel anastomosis (primary)'},
   {id:'jejunostomy', label:'Jejunostomy'},
   {id:'appendicectomy', label:'Appendicectomy'},
   {id:'cholecystectomy', label:'Cholecystectomy'},
@@ -1005,6 +1049,7 @@ const DEVICES_WOUNDS = [
 
 const DEVICES_GENERAL = [
   {id:'vte_mech', label:'VTE mechanical prophylaxis (Flowtron/TEDs)'},
+  {id:'eol_care', label:'End of life / Individualised Care Plan'},
 ];
 
 const DEVICES_ANALGESIA = [
@@ -1079,7 +1124,7 @@ buildPills('devGroupAnalgesia', DEVICES_ANALGESIA, 'dev', renderDeviceSectionsSa
 buildPills('devGroupPathway', DEVICES_PATHWAY, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupCardiac', DEVICES_CARDIAC, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupSymptoms', DEVICES_SYMPTOMS, 'dev', renderDeviceSectionsSafe);
-function renderDeviceSectionsSafe(){ renderDeviceSections(); updateTPNRefeedingHint(); }
+function renderDeviceSectionsSafe(){ renderDeviceSections(); updateTPNRefeedingHint(); updatePostOpHints(); }
 function updateTPNRefeedingHint(){
   const tpnTicked = document.querySelector('#dev_tpn input')?.checked;
   const hint = document.getElementById('tpnRefeedingHint');
@@ -1123,11 +1168,43 @@ function uncheckPeers(el, ...peerIds){
 document.getElementById('B_rib_chk').addEventListener('change', e=>{
   document.getElementById('B_rib_reveal').style.display = e.target.checked ? 'grid' : 'none';
 });
+function applyPostOpDefaults(){
+  const isPostOp = document.getElementById('postop_chk').checked;
+  if(isPostOp){
+    const day = getVal('postop_day');
+    if(day === 'Day of surgery'){
+      const recChk = document.getElementById('recovery_chk');
+      if(recChk && !recChk.checked){
+        recChk.checked = true;
+        toggleShow('recovery_chk','recovery_reveal');
+      }
+    }
+    toggleDietFluidReason();
+  }
+  updatePostOpHints();
+}
+function updatePostOpHints(){
+  const isPostOp = document.getElementById('postop_chk').checked;
+  const mobHint = document.getElementById('postOpMobHint');
+  if(mobHint) mobHint.style.display = isPostOp ? 'block' : 'none';
+  const vteHint = document.getElementById('postOpVteHint');
+  const vteTicked = document.querySelector('#dev_vte_mech input')?.checked;
+  if(vteHint) vteHint.style.display = (isPostOp && !vteTicked) ? 'block' : 'none';
+}
 function toggleDietFluidReason(){
+  const isPostOp = document.getElementById('postop_chk')?.checked;
   const dietRev = document.getElementById('dietReasonReveal');
-  if(dietRev) dietRev.classList.toggle('show', getVal('dietSel')!=='normal');
+  const dietModified = getVal('dietSel')!=='normal';
+  if(dietRev) dietRev.classList.toggle('show', dietModified);
+  if(dietModified && isPostOp && !getVal('dietReasonSel')){
+    document.getElementById('dietReasonSel').value = 'Post-operative recovery/bowel rest';
+  }
   const fluidRev = document.getElementById('fluidReasonReveal');
-  if(fluidRev) fluidRev.classList.toggle('show', getVal('fluidSel')!=='free');
+  const fluidModified = getVal('fluidSel')!=='free';
+  if(fluidRev) fluidRev.classList.toggle('show', fluidModified);
+  if(fluidModified && isPostOp && !getVal('fluidReasonSel')){
+    document.getElementById('fluidReasonSel').value = 'Post-operative recovery/bowel rest';
+  }
 }
 function toggleBowel(){
   const v = document.getElementById('bowelSel').value;
@@ -1146,12 +1223,64 @@ function toggleMetCriteria(idx){
   const rev = document.getElementById('met_intv_reveal_'+idx);
   if(el && rev) rev.classList.toggle('show', el.checked);
 }
+function toggleComplicationNested(prefix, idx){
+  const el = document.getElementById(`${prefix}_cond_${idx}`);
+  const rev = document.getElementById(`${prefix}_intv_reveal_${idx}`);
+  if(el && rev) rev.classList.toggle('show', el.checked);
+}
+function toggleComplicationReaction(prefix, idx){
+  const el = document.getElementById(`${prefix}_cond_${idx}`);
+  const rev = document.getElementById(`${prefix}_react_${idx}`);
+  if(el && rev) rev.classList.toggle('show', el.checked);
+}
+function collectComplications(list, prefix){
+  const observed = [];
+  let anyUrgent = false;
+  list.forEach((entry,idx)=>{
+    const el = document.getElementById(`${prefix}_cond_${idx}`);
+    if(!(el && el.checked)) return;
+    if(entry.urgent) anyUrgent = true;
+    if(entry.i){
+      const steps = [];
+      entry.i.forEach((step,sidx)=>{
+        const sel = document.getElementById(`${prefix}_intv_${idx}_${sidx}`);
+        if(sel && sel.checked) steps.push(step);
+      });
+      observed.push(steps.length ? `${entry.c} \u2014 management given: ${steps.join(', ')}.` : `${entry.c} \u2014 management per protocol not yet documented.`);
+    } else {
+      observed.push(`${entry.c} \u2014 ${entry.r}`);
+    }
+  });
+  const other = getVal(`${prefix}_cond_other`);
+  if(other) observed.push(`Other observation: ${other}.`);
+  return { observed, anyUrgent };
+}
 function toggleRibPainEscalation(){
   const val = getVal('rib_dynamic_pain');
   const lowRev = document.getElementById('ribLowPainReveal'), highRev = document.getElementById('ribHighPainReveal');
   if(!lowRev || !highRev) return;
-  lowRev.classList.toggle('show', val.startsWith('0-1'));
-  highRev.classList.toggle('show', val.startsWith('2-3'));
+  const dynNum = parseInt(val.charAt(0));
+  lowRev.classList.toggle('show', dynNum<=1);
+  highRev.classList.toggle('show', dynNum>=2);
+}
+function updateRibScore(){
+  const breaks = getVal('rib_breaks');
+  const sides = getVal('rib_sides')==='Bilateral' ? 2 : 1;
+  const ageSel = getVal('rib_age_band');
+  const ageMatch = ageSel.match(/factor (\d)/);
+  const disp = document.getElementById('rib_score_display');
+  if(!disp) return;
+  if(breaks && ageMatch){
+    const ageFactor = parseInt(ageMatch[1]);
+    const score = (parseFloat(breaks)*sides) + ageFactor;
+    let suggestedStep = 'Score <3: below pathway range, use clinical judgement';
+    if(score>=3 && score<=6) suggestedStep = 'suggested Step 1';
+    else if(score>=7 && score<=10) suggestedStep = 'suggested Step 2';
+    else if(score>=11) suggestedStep = 'suggested Step 3';
+    disp.textContent = `Rib fracture score: (${breaks}\u00d7${sides}) + ${ageFactor} = ${score} \u2014 ${suggestedStep}`;
+  } else {
+    disp.textContent = '';
+  }
 }
 function toggleRibReferralSlip(){
   const val = getVal('rib_step');
@@ -1943,6 +2072,38 @@ function abgText(f, prefix){
   return out;
 }
 
+const LAST_MANAGEMENT_STEPS = [
+  'Local anaesthetic infusion/administration stopped immediately',
+  'Emergency help called (2222 crash call)',
+  'Airway maintained, 100% oxygen given, ventilation supported',
+  'IV access confirmed/secured',
+  'Seizures managed (benzodiazepine given per protocol)',
+  'Continuous cardiovascular monitoring established',
+  'CPR commenced (if cardiac arrest)',
+  'Lipid emulsion (Intralipid 20%) bolus given per AAGBI protocol',
+  'Lipid emulsion infusion commenced/continued per AAGBI protocol',
+  'Patient transferred to critical care/theatre for ongoing management',
+];
+const RSC_CONDITIONS = [
+  {c:'Signs of local anaesthetic systemic toxicity (LAST) \u2014 perioral tingling, tinnitus, metallic taste, visual disturbance, confusion, drowsiness, seizures', i:LAST_MANAGEMENT_STEPS, urgent:true},
+  {c:'Catheter dislodgement/migration', r:'Catheter not used further, surgical/anaesthetic/acute pain team informed, catheter removed if fully displaced.'},
+  {c:'Leakage of local anaesthetic at insertion site', r:'Connections checked, dressing reinforced, acute pain team informed if persistent.'},
+  {c:'Signs of infection at insertion site (redness/swelling/discharge/pyrexia)', r:'Site swabbed, surgical SHO informed, antibiotics considered, catheter removal considered if severe.'},
+  {c:'Bleeding/haematoma at insertion site', r:'Pressure applied, site monitored closely, surgical SHO informed if expanding or significant.'},
+  {c:'Inadequate analgesia / block not effective', r:'Pain reassessed, bolus given per prescription if due, acute pain team contacted if ongoing.'},
+  {c:'Blockage \u2014 unable to bolus/flush', r:'Not forced, connections checked, acute pain team/anaesthetist informed.'},
+];
+const EPIDURAL_CONDITIONS = [
+  {c:'Signs of local anaesthetic systemic toxicity (LAST) \u2014 perioral tingling, tinnitus, metallic taste, visual disturbance, confusion, drowsiness, seizures', i:LAST_MANAGEMENT_STEPS, urgent:true},
+  {c:'Signs of epidural haematoma/abscess \u2014 new/worsening back pain, new motor or sensory deficit, bladder/bowel dysfunction', r:'Epidural infusion stopped, urgent senior/anaesthetic review requested, urgent MRI considered.', urgent:true},
+  {c:'Dural puncture headache (postural headache, worse sitting/standing)', r:'Patient positioned flat for comfort, simple analgesia given, anaesthetic/acute pain team informed, epidural blood patch considered.'},
+  {c:'Catheter migration or disconnection', r:'Epidural not used further, dressing/connections checked, anaesthetic/acute pain team informed.'},
+];
+const PCA_CONDITIONS = [
+  {c:'PCA pump malfunction or programming error suspected', r:'PCA stopped, pump/settings checked against prescription, biomedical engineering/anaesthetic team informed, pain reassessed.'},
+  {c:'Inadequate analgesia despite appropriate PCA use', r:'Pain and PCA demand/delivery ratio reassessed, acute pain team contacted, background/bolus settings reviewed.'},
+  {c:'Persistent nausea/vomiting despite antiemetics', r:'Antiemetic given/reviewed, acute pain team/anaesthetist informed if ongoing.'},
+];
 const MET_CRITERIA = [
   {c:'Airway threatened/compromised', i:['Airway opening manoeuvre (head tilt/chin lift or jaw thrust)','Airway suction performed','Oropharyngeal/nasopharyngeal airway inserted','High-concentration O2 via reservoir mask (15L/min)','Anaesthetic/airway expert called']},
   {c:'Respiratory rate \u22645 or \u226536 breaths/min', i:['High-concentration oxygen given, target SpO2 94\u201398% (88\u201392% if at risk of hypercapnic failure)','NIV/CPAP considered','Bronchodilators given (if wheeze/bronchospasm)','Naloxone considered (if opioid-induced)','ABG obtained','Senior/anaesthetic review requested']},
@@ -1980,8 +2141,42 @@ const DEVICE_TEMPLATES = {
       if(notes) base += ` ${notes}.`;
       return base; }
   },
+  eol_care: {
+    title:'End of Life / Individualised Care Plan',
+    fields:[
+      {id:'eol_status', label:'Care plan status', type:'select', options:['Individualised Care Plan commenced (MDT agreed patient is in last days of life)','Being discussed with MDT/family, not yet commenced']},
+      {id:'eol_dnacpr', label:'DNACPR status', type:'select', options:['DNACPR in place','Being discussed','Not yet addressed']},
+      {id:'eol_pain', label:'Pain', type:'select', options:['Comfortable, pain well controlled','Some discomfort, analgesia reviewed/given','Poorly controlled, medical review requested']},
+      {id:'eol_breathlessness', label:'Breathlessness', type:'select', options:['Comfortable, no respiratory distress','Some breathlessness, position/oxygen/medication given','Distressed, medical review requested']},
+      {id:'eol_secretions', label:'Respiratory secretions', type:'select', options:['None noted','Some secretions, repositioned and/or anticholinergic given','Significant, medical review requested']},
+      {id:'eol_agitation', label:'Agitation/restlessness', type:'select', options:['Settled and calm','Mild agitation, reassurance given','Distressed, anticipatory medication given']},
+      {id:'eol_hydration', label:'Hydration', type:'select', options:['Oral care and sips as tolerated','Clinically assisted hydration in place, reviewed regularly','Not for clinically assisted hydration \u2014 individualised decision made with patient/family and MDT']},
+      {id:'eol_syringedriver', label:'Syringe driver', type:'select', options:['Not in use','In use (see medication chart)']},
+      {id:'eol_mouthcare', label:'Mouth care given', type:'select', options:['Yes','Not yet due']},
+      {id:'eol_family', label:'Family/those important to patient', type:'select', options:['Informed, involved in care and decisions','Being contacted/updated','Spiritual/religious/cultural needs addressed or chaplaincy offered']},
+    ],
+    build:(f)=>{
+      const status=f.eol_status||'Individualised Care Plan commenced (MDT agreed patient is in last days of life)';
+      const dnacpr=f.eol_dnacpr||'DNACPR in place', pain=f.eol_pain||'Comfortable, pain well controlled';
+      const breath=f.eol_breathlessness||'Comfortable, no respiratory distress', secretions=f.eol_secretions||'None noted';
+      const agitation=f.eol_agitation||'Settled and calm', hydration=f.eol_hydration||'Oral care and sips as tolerated';
+      const driver=f.eol_syringedriver||'Not in use', mouth=f.eol_mouthcare||'Yes', family=f.eol_family||'Informed, involved in care and decisions';
+
+      let base = `${status}. ${dnacpr}.`;
+      base += ` Pain: ${pain.toLowerCase()}. Breathlessness: ${breath.toLowerCase()}. Respiratory secretions: ${secretions.toLowerCase()}. Agitation/restlessness: ${agitation.toLowerCase()}.`;
+      base += ` Hydration: ${hydration.charAt(0).toLowerCase() + hydration.slice(1)}.`;
+      if(driver.startsWith('In use')) base += ' Syringe driver in use, see medication chart for contents and rate.';
+      base += ` Mouth care ${mouth==='Yes'?'given':'not yet due'}. ${family}.`;
+
+      const concern = pain.startsWith('Poorly') || breath.startsWith('Distressed') || secretions.startsWith('Significant') || agitation.startsWith('Distressed');
+      if(concern) base += ' Symptom(s) not yet settled \u2014 medical/palliative care team review requested, plan to be reviewed and updated with patient/family as appropriate.';
+      return base;
+    }
+  },
   pca: {
     title:'PCA',
+    complicationsList: PCA_CONDITIONS,
+    complicationsPrefix: 'pca_comp',
     fields:[
       {id:'pca_drug', label:'Drug', type:'select_other', options:['Morphine','Oxycodone','Fentanyl','Hydromorphone']},
       {id:'pca_sed', label:'Sedation score /3', type:'number'},
@@ -2019,11 +2214,15 @@ const DEVICE_TEMPLATES = {
           base += ` Mild-moderate opioid-related sedation noted (RR ${rrVal}/min, sedation ${sed}/3) \u2014 closely monitored, Acute Pain Team informed.`;
         }
       }
+      const {observed} = collectComplications(PCA_CONDITIONS, 'pca_comp');
+      observed.forEach(line=>{ base += ` ${line}`; });
       return base;
     }
   },
   rsc: {
     title:'Rectus Sheath Catheter',
+    complicationsList: RSC_CONDITIONS,
+    complicationsPrefix: 'rsc',
     fields:[
       {id:'rsc_side', label:'Side', type:'select', options:['bilateral','left','right']},
       {id:'rsc_drug', label:'Bolus drug', type:'select_other', options:['Levobupivacaine 0.25%','Ropivacaine 0.2%','Bupivacaine 0.25%']},
@@ -2033,13 +2232,24 @@ const DEVICE_TEMPLATES = {
     ],
     build:(f)=>{ const side=f.rsc_side||'bilateral', drug=f.rsc_drug||'[bolus drug]', vol=f.rsc_volume||'[volume]', freq=f.rsc_frequency||'[frequency]', last=f.rsc_lastgiven;
       const lastTxt = last ? `, last given at ${last}` : '';
-      return pick([
-        `Rectus sheath catheter(s) in situ (${side}), insertion site clean, dry and intact. Given as bolus (not continuous infusion): ${vol} ${drug}, ${freq}${lastTxt}. No leakage, redness or signs of infection noted at insertion site.`,
-        `Rectus sheath catheter (${side}) in situ, site clean and dry. Bolus dosing: ${vol} ${drug}, ${freq}${lastTxt}. No leakage, redness or infection observed.`
-      ]); }
+      let base = pick([
+        `Rectus sheath catheter(s) in situ (${side}), insertion site checked. Given as bolus (not continuous infusion): ${vol} ${drug}, ${freq}${lastTxt}.`,
+        `Rectus sheath catheter (${side}) in situ, site checked. Bolus dosing: ${vol} ${drug}, ${freq}${lastTxt}.`
+      ]);
+      const {observed, anyUrgent} = collectComplications(RSC_CONDITIONS, 'rsc');
+      if(!observed.length){
+        base += ' No leakage, redness or signs of infection noted at insertion site.';
+      } else {
+        if(anyUrgent) base += ' \u26a0 URGENT:';
+        observed.forEach(line=>{ base += ` ${line}`; });
+      }
+      return base;
+    }
   },
   epidural: {
     title:'Epidural',
+    complicationsList: EPIDURAL_CONDITIONS,
+    complicationsPrefix: 'epi_comp',
     fields:[
       {id:'epi_level', label:'Insertion level', type:'text', placeholder:'e.g. T9/10'},
       {id:'epi_drug', label:'Infusate', type:'select_other', options:['Levobupivacaine 0.1% + Fentanyl 2mcg/ml','Levobupivacaine 0.1%','Ropivacaine 0.2%','Bupivacaine 0.1% + Fentanyl 2mcg/ml']},
@@ -2069,6 +2279,11 @@ const DEVICE_TEMPLATES = {
       base += ' ' + (hypoMap[hypo] || hypoMap['No']);
       if(brom && parseFloat(brom)>=2) base += ` Motor block score ${brom}/3 \u2014 epidural rate reviewed, anaesthetist/Acute Pain Team informed.`;
       if(sed && parseFloat(sed)>=3) base += ` Sedation score ${sed}/4 \u2014 epidural paused, anaesthetist informed urgently, closely monitored.`;
+      const {observed, anyUrgent} = collectComplications(EPIDURAL_CONDITIONS, 'epi_comp');
+      if(observed.length){
+        if(anyUrgent) base += ' \u26a0 URGENT:';
+        observed.forEach(line=>{ base += ` ${line}`; });
+      }
       return base; }
   },
   nerveblock: {
@@ -2116,41 +2331,64 @@ const DEVICE_TEMPLATES = {
     title:'Rib fracture pathway',
     gasPrefix:'rib',
     ribPathway: true,
+    ribScoreCalc: true,
     fields:[
-      {id:'rib_count', label:'Number of fractures', type:'text', placeholder:'e.g. 3 (ribs 5-7, right)'},
-      {id:'rib_step', label:'Pathway step', type:'select', options:['Step 1 \u2014 Regular Paracetamol 1g QDS + Codeine 60mg QDS \u00b1 regular NSAID','Step 2 \u2014 Step 1 + PRN oral morphine liquid 10-20mg 2-4hrly','Step 3 \u2014 Escalated to Acute Pain Team (PCA/regional block/RSC)']},
-      {id:'rib_step3_method', label:'Step 3 method (if applicable)', type:'select_other', options:['PCA','Epidural','Rectus Sheath Catheter (RSC)','Nerve block']},
-      {id:'rib_dynamic_pain', label:'Dynamic pain score (pain on movement/cough)', type:'select', options:['0-1 \u2014 No/mild pain','2-3 \u2014 Moderate/severe pain']},
+      {id:'rib_breaks', label:'Number of breaks', type:'number', placeholder:'e.g. 2 (2 breaks in 1 rib = 2)'},
+      {id:'rib_sides', label:'Sides', type:'select', options:['Unilateral','Bilateral']},
+      {id:'rib_age_band', label:'Age factor', type:'select', options:['\u226440 years (factor 0)','41\u201350 years (factor 1)','51\u201360 years (factor 2)','61\u201370 years (factor 3)','>70 years (factor 4)']},
+      {id:'rib_step', label:'Pathway step', type:'select', options:['Step 1 \u2014 Regular Paracetamol 1g QDS + Codeine 60mg QDS \u00b1 NSAID \u00b1 PRN oral morphine liquid 10\u201320mg 2\u20134hrly','Step 2 \u2014 + one-off bolus 5\u201310mg IV morphine, PCA (Fentanyl/Oxycodone if renal failure), PRN antiemetics/laxatives','Step 3 \u2014 Regional analgesia, block aimed within 12 hours of referral']},
+      {id:'rib_step2_gabapentin', label:'Gabapentin commenced (Step 2, on pain team advice)?', type:'select', options:['No','Yes \u2014 300mg OD day 1, BD day 2, TDS day 3+']},
+      {id:'rib_step3_method', label:'Step 3 regional technique (if applicable)', type:'select_other', options:['Serratus Anterior catheter','Thoracic Epidural','Erector Spinae catheter']},
+      {id:'rib_dynamic_pain', label:'Dynamic pain score (pain on deep breathing/coughing)', type:'select', options:['0 \u2014 None','1 \u2014 Mild','2 \u2014 Moderate','3 \u2014 Severe']},
+      {id:'rib_physio', label:'Physiotherapy / incentive spirometry', type:'select', options:['Physio referral made, incentive spirometry effective','Unable to complete/deteriorating incentive spirometry due to pain \u2014 Acute Pain Team contacted','Not yet assessed']},
       ...abgFields('rib'),
       {id:'rib_sitout', label:'Time sat out / mobilised', type:'text', placeholder:'e.g. 2 hours in chair, mobilised to bathroom'},
       {id:'rib_next_reassess', label:'Next pain reassessment due', type:'text', placeholder:'e.g. 60 minutes / 14:30'},
     ],
     build:(f)=>{
-      const count=f.rib_count||'[X]', step=f.rib_step||'Step 1 \u2014 Regular Paracetamol 1g QDS + Codeine 60mg QDS \u00b1 regular NSAID', dynPain=f.rib_dynamic_pain||'0-1 \u2014 No/mild pain';
-      const sit=f.rib_sitout||'[detail]', nextReassess=f.rib_next_reassess;
-      let base = pick([
-        `Rib fracture pathway in progress \u2014 ${count} confirmed. Currently on ${step}. Dynamic pain score ${dynPain}. Incentive spirometry encouraged hourly with effective technique demonstrated. Chest physiotherapy input ongoing. Patient sat out and mobilised: ${sit}. SpO2 maintained above 94% on air.`,
-        `Rib fracture pathway ongoing \u2014 ${count}. Currently ${step}. Dynamic pain score ${dynPain}. Encouraged hourly incentive spirometry, effective technique shown. Physio input continuing. Mobilised/sat out: ${sit}. Sats maintained above 94% on air.`
-      ]);
+      const breaks=f.rib_breaks, sidesTxt=f.rib_sides||'Unilateral', sides = sidesTxt==='Bilateral'?2:1;
+      const ageFactorMatch = (f.rib_age_band||'').match(/factor (\d)/);
+      const ageFactor = ageFactorMatch ? parseInt(ageFactorMatch[1]) : null;
+      const step=f.rib_step||'Step 1 \u2014 Regular Paracetamol 1g QDS + Codeine 60mg QDS \u00b1 NSAID \u00b1 PRN oral morphine liquid 10\u201320mg 2\u20134hrly';
+      const dynPain=f.rib_dynamic_pain||'0 \u2014 None';
+      const sit=f.rib_sitout||'[detail]', nextReassess=f.rib_next_reassess, physio=f.rib_physio;
 
-      if(dynPain.startsWith('0-1')){
+      let scoreTxt = '';
+      if(breaks && ageFactor!==null){
+        const score = (parseFloat(breaks)*sides) + ageFactor;
+        scoreTxt = ` Rib fracture score: (${breaks}\u00d7${sides}) + ${ageFactor} = ${score}.`;
+      }
+
+      let base = pick([
+        `Rib fracture pathway in progress (${sidesTxt.toLowerCase()}${breaks?', '+breaks+' breaks':''}).${scoreTxt} Currently on ${step}.`,
+        `Rib fracture pathway ongoing (${sidesTxt.toLowerCase()}${breaks?', '+breaks+' breaks':''}).${scoreTxt} Currently ${step}.`
+      ]);
+      if(f.rib_step2_gabapentin && f.rib_step2_gabapentin.startsWith('Yes')){
+        base += ` Gabapentin commenced on pain team advice (${f.rib_step2_gabapentin.split('\u2014 ')[1]}); increased risk of sedation/confusion/falls in older adults \u2014 risk assessed.`;
+      }
+      base += ` Dynamic pain score: ${dynPain}.`;
+
+      const dynNum = parseInt(dynPain.charAt(0));
+      if(dynNum<=1){
         const actions = [];
         if(document.getElementById('rib_low_continue')?.checked) actions.push('current analgesia continued');
         if(document.getElementById('rib_low_reassurance')?.checked) actions.push('reassurance given');
         if(document.getElementById('rib_low_environment')?.checked) actions.push('environment reviewed');
         base += actions.length ? ` ${capitalize(actions.join(', '))}.` : '';
-      } else if(dynPain.startsWith('2-3')){
+      } else {
         const actions = [];
         if(document.getElementById('rib_high_parentteam')?.checked) actions.push('surgical (parent) team contacted for medical review');
         if(document.getElementById('rib_high_hourlyobs')?.checked) actions.push('observations increased to hourly until stable');
         if(document.getElementById('rib_high_paincontact')?.checked) actions.push('Acute Pain Team/on-call anaesthetist contacted (bleep 238 WRH/1266 ALX in hours, 700 WRH/1907 ALX out of hours)');
         base += actions.length ? ` ${capitalize(actions.join('; '))}.` : ' Moderate/severe dynamic pain \u2014 escalation per nursing guidance to be actioned.';
       }
-      if(step.startsWith('Step 3') && document.getElementById('rib_referral_slip')?.checked){
-        base += ' Pain Team referral slip completed and sent.';
+      if(physio){
+        if(physio.startsWith('Physio referral')) base += ' Physiotherapy referral made, incentive spirometry effective.';
+        else if(physio.startsWith('Unable')) base += ' Unable to complete/deteriorating incentive spirometry due to pain \u2014 Acute Pain Team contacted.';
       }
-      if(step.startsWith('Step 3') && f.rib_step3_method){
-        base += ` Analgesia via ${f.rib_step3_method}.`;
+      if(step.startsWith('Step 3')){
+        if(document.getElementById('rib_referral_slip')?.checked) base += ' Referral slip completed and sent to Pain Team; 1st on-call Anaesthetist contacted and case booked in CEPOD via Bluespier.';
+        if(f.rib_step3_method) base += ` Regional technique: ${f.rib_step3_method}.`;
       }
       if(nextReassess) base += ` Next reassessment ${nextReassess}.`;
       return base + abgText(f,'rib');
@@ -2808,6 +3046,7 @@ function renderDeviceSections(){
         }
         if(t.ribPathway && f.id==='rib_dynamic_pain') extraAttr = ` onchange="toggleRibPainEscalation()"`;
         if(t.ribPathway && f.id==='rib_step') extraAttr = ` onchange="toggleRibReferralSlip()"`;
+        if(t.ribScoreCalc && (f.id==='rib_breaks' || f.id==='rib_sides' || f.id==='rib_age_band')) extraAttr = ` oninput="updateRibScore()" onchange="updateRibScore()"`;
         if(f.type==='select_other'){
           return `<div><label class="field">${f.label}</label><select id="${f.id}" onchange="toggleOtherField('${f.id}')">${f.options.map(o=>`<option value="${o}">${o}</option>`).join('')}<option value="Other (specify)">Other (specify)</option></select><input type="text" id="${f.id}_other" placeholder="specify..." style="display:none; margin-top:4px;"></div>`;
         }
@@ -2833,6 +3072,27 @@ function renderDeviceSections(){
       if(t.ciwaScore){
         card.innerHTML += `<div class="hint" id="ciwa_total_display" style="font-weight:700;"></div>`;
       }
+      if(t.complicationsList){
+        const list = t.complicationsList, prefix = t.complicationsPrefix;
+        const condHtml = list.map((entry,idx)=>{
+          const chkId = `${prefix}_cond_${idx}`;
+          const labelStyle = entry.urgent ? ' style="color:var(--danger); font-weight:600;"' : '';
+          const chkStyle = entry.urgent ? ' style="accent-color:var(--danger);"' : '';
+          if(entry.i){
+            const intvHtml = entry.i.map((step,sidx)=>`<div class="opt"><input type="checkbox" id="${prefix}_intv_${idx}_${sidx}"><label>${step}</label></div>`).join('');
+            return `<div class="opt"><input type="checkbox" id="${chkId}"${chkStyle} onchange="toggleComplicationNested('${prefix}',${idx})"><label${labelStyle}>${entry.c}</label></div>
+            <div class="reveal" id="${prefix}_intv_reveal_${idx}" style="margin-left:18px; margin-bottom:8px; border-left:3px solid var(--danger); padding-left:10px;">
+              <div class="hint" style="color:var(--danger); font-weight:600;">Management steps (tick as completed):</div>
+              ${intvHtml}
+            </div>`;
+          }
+          return `<div class="opt"><input type="checkbox" id="${chkId}"${chkStyle} onchange="toggleComplicationReaction('${prefix}',${idx})"><label${labelStyle}>${entry.c}</label></div>
+          <div class="reveal" id="${prefix}_react_${idx}" style="margin-left:18px; margin-bottom:8px; border-left:3px solid var(--primary); padding-left:10px;">
+            <div class="hint" style="font-weight:600;">Recommended action: ${entry.r}</div>
+          </div>`;
+        }).join('');
+        card.innerHTML += `<div class="hint" style="margin-top:8px;">Any complications observed? (tick all that apply \u2014 each shows its recommended response immediately)</div>${condHtml}<input type="text" id="${prefix}_cond_other" placeholder="other observation (specify)" style="margin-top:6px;">`;
+      }
       if(t.metCall){
         const critHtml = MET_CRITERIA.map((entry,idx)=>{
           const intvHtml = entry.i.map((intv,iidx)=>`<div class="opt"><input type="checkbox" id="met_intv_${idx}_${iidx}"><label>${intv}</label></div>`).join('');
@@ -2844,6 +3104,9 @@ function renderDeviceSections(){
           </div>`;
         }).join('');
         card.innerHTML += `<div class="hint" style="margin-top:8px;">Trigger criteria (tick all that apply \u2014 each reveals its guideline-based interventions):</div>${critHtml}<input type="text" id="met_criteria_other" placeholder="other trigger (specify)" style="margin-top:6px;">`;
+      }
+      if(t.ribScoreCalc){
+        card.innerHTML += `<div class="hint" id="rib_score_display" style="font-weight:700; margin-top:4px;"></div>`;
       }
       if(t.ribPathway){
         card.innerHTML += `<div class="reveal" id="ribLowPainReveal">
@@ -2877,8 +3140,11 @@ function renderDeviceSections(){
     if(devId==='ivabx'){ updateAbxLevel(); }
     if(devId==='stoma'){ toggleStomaBristolPopups(); }
     if(devId==='ciwa'){ updateCiwaScore(); }
-    if(devId==='ribpathway'){ toggleRibPainEscalation(); toggleRibReferralSlip(); }
+    if(devId==='ribpathway'){ toggleRibPainEscalation(); toggleRibReferralSlip(); updateRibScore(); }
     if(devId==='metcall'){ MET_CRITERIA.forEach((entry,idx)=>toggleMetCriteria(idx)); }
+    if(devId==='rsc'){ RSC_CONDITIONS.forEach((entry,idx)=>{ if(entry.i) toggleComplicationNested('rsc', idx); else toggleComplicationReaction('rsc', idx); }); }
+    if(devId==='epidural'){ EPIDURAL_CONDITIONS.forEach((entry,idx)=>{ if(entry.i) toggleComplicationNested('epi_comp', idx); else toggleComplicationReaction('epi_comp', idx); }); }
+    if(devId==='pca'){ PCA_CONDITIONS.forEach((entry,idx)=>{ if(entry.i) toggleComplicationNested('pca_comp', idx); else toggleComplicationReaction('pca_comp', idx); }); }
     if(t && t.fields){ t.fields.forEach(f=>{ if(f.type==='select_other') toggleOtherField(f.id); }); }
   });
 }
@@ -3038,6 +3304,14 @@ function buildOpening(){
   const shift = window.currentShift;
   const time = getVal('handoverTime') || (shift==='day' ? '07:00' : '19:00');
   const medOmitted = getVal('medSel')==='omitted';
+  const lines0 = [];
+  if(document.getElementById('postop_chk').checked){
+    const day = getVal('postop_day');
+    const procChecked = Array.from(document.querySelectorAll('#procGroup input:checked')).map(i=>i.value);
+    const procLabels = PROCEDURES.filter(p=>procChecked.includes(p.id)).map(p=>p.label);
+    const procTxt = procLabels.length ? ` following ${procLabels.join(', ').toLowerCase()}` : '';
+    lines0.push(`${day}${procTxt}.`);
+  }
   const includeWash = shift === 'day';
   const washMap = { assisted:'wash_assisted', independent:'wash_independent', refused:'wash_refused', handover:'wash_handover' };
   const lines = [];
@@ -3053,7 +3327,30 @@ function buildOpening(){
       lines.push(pick(STATIC_PHRASES.med_all));
     }
   }
-  return lines;
+  if(document.getElementById('recovery_chk').checked){
+    const recItems = [
+      ['rec_sbar','SBAR/verbal handover received from recovery/anaesthetic staff'],
+      ['rec_airway','airway patent, breathing adequately, oxygen as prescribed'],
+      ['rec_obs','vital signs stable on arrival, NEWS2 checked'],
+      ['rec_pain','pain assessed and analgesia plan reviewed'],
+      ['rec_wound','wound/dressing and any drains checked'],
+      ['rec_ivi','IV fluids/cannula site checked and patent'],
+      ['rec_nausea','nausea/vomiting assessed, antiemetics given if needed'],
+      ['rec_vte','VTE prophylaxis prescribed and commenced'],
+      ['rec_consent','consent form and operation note reviewed/filed'],
+      ['rec_plan','post-operative instructions from surgical/anaesthetic team reviewed'],
+      ['rec_orientate','patient orientated to ward environment, call bell within reach'],
+    ];
+    const done = recItems.filter(([id])=>document.getElementById(id).checked).map(([,txt])=>txt);
+    const notDone = recItems.filter(([id])=>!document.getElementById(id).checked).map(([,txt])=>txt);
+    let recLine = pick(['Patient received onto ward from recovery following surgery.', 'Admitted to ward from recovery post-operatively.']);
+    if(done.length) recLine += ` ${capitalize(done.join(', '))}.`;
+    if(notDone.length) recLine += ` Outstanding: ${notDone.join(', ')}.`;
+    const otherRec = getVal('rec_other');
+    if(otherRec) recLine += ` ${otherRec}.`;
+    lines.push(recLine);
+  }
+  return lines0.concat(lines);
 }
 
 function buildNoteText(){
