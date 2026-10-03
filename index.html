@@ -110,13 +110,48 @@
 <div class="step" data-step="1" id="step1">
 <div class="card">
     <h2>Diagnosis <span class="tag">select all that apply</span></h2>
-    <div class="pillgroup" id="dxGroup"></div>
+    <div class="hint">Acute abdomen / general surgical</div>
+    <div class="pillgroup" id="dxGroupAcute"></div>
+    <div class="hint" style="margin-top:12px;">Colorectal / bowel</div>
+    <div class="pillgroup" id="dxGroupColorectal"></div>
+    <div class="hint" style="margin-top:12px;">Trauma / orthopaedic</div>
+    <div class="pillgroup" id="dxGroupTrauma"></div>
+    <div class="hint" style="margin-top:12px;">Underlying/comorbid conditions</div>
+    <div class="pillgroup" id="dxGroupComorbid"></div>
+    <div class="reveal" id="dmInsulinReveal" style="margin-top:8px;">
+      <label class="field">Using insulin?</label>
+      <select id="dm_insulin" onchange="updateDMInsulinHint(); toggleDMBM3am();">
+        <option value="No">No</option>
+        <option value="Yes">Yes</option>
+      </select>
+    </div>
+    <div class="reveal" id="dmBMChartReveal" style="margin-top:8px;">
+      <div class="hint">BM (blood glucose) monitoring</div>
+      <div class="row2" id="dmBM3amWrap" style="display:none;"><div><label class="field">3am (insulin patients)</label><input type="text" id="dm_bm_3am" placeholder="e.g. 6.4mmol/L"></div></div>
+      <div class="row2">
+        <div><label class="field">Pre-breakfast</label><input type="text" id="dm_bm_breakfast" placeholder="e.g. 7.1mmol/L"></div>
+        <div><label class="field">Pre-lunch</label><input type="text" id="dm_bm_lunch" placeholder="e.g. 6.8mmol/L"></div>
+      </div>
+      <div class="row2">
+        <div><label class="field">Pre-tea</label><input type="text" id="dm_bm_tea" placeholder="e.g. 7.5mmol/L"></div>
+        <div><label class="field">Pre-bedtime</label><input type="text" id="dm_bm_bedtime" placeholder="e.g. 8.0mmol/L"></div>
+      </div>
+    </div>
   </div>
 
   <div class="grid-top">
     <div class="card">
       <h2>Procedure <span class="tag">optional — leave blank if no surgery</span></h2>
-      <div class="pillgroup" id="procGroup"></div>
+      <div class="hint">Colorectal / Lower GI</div>
+      <div class="pillgroup" id="procGroupColorectal"></div>
+      <div class="hint" style="margin-top:12px;">Upper GI / Hepatobiliary / Pancreatic</div>
+      <div class="pillgroup" id="procGroupUpperGI"></div>
+      <div class="hint" style="margin-top:12px;">Hernia / Abdominal wall</div>
+      <div class="pillgroup" id="procGroupHernia"></div>
+      <div class="hint" style="margin-top:12px;">Emergency general surgery</div>
+      <div class="pillgroup" id="procGroupEmergency"></div>
+      <div class="hint" style="margin-top:12px;">Trauma / Orthopaedic</div>
+      <div class="pillgroup" id="procGroupOrtho"></div>
       <div class="opt" style="margin-top:10px;"><input type="checkbox" id="postop_chk" onchange="toggleShow('postop_chk','postop_reveal'); applyPostOpDefaults();"><label>Post-operative patient</label></div>
       <div class="reveal" id="postop_reveal">
         <label class="field">Post-operative day</label>
@@ -136,6 +171,12 @@
         <div class="shiftbtn active" data-shift="day" onclick="setShift('day')">Long Day</div>
         <div class="shiftbtn" data-shift="night" onclick="setShift('night')">Night</div>
       </div>
+      <div class="hint" style="margin-top:10px;">Patient location</div>
+      <div class="shiftrow">
+        <div class="shiftbtn active" data-location="ward" onclick="setPatientLocation('ward')">Ward</div>
+        <div class="shiftbtn" data-location="highcare" onclick="setPatientLocation('highcare')">High Care</div>
+      </div>
+      <div class="hint" id="highCareHint" style="display:none; margin-top:6px;">2-hourly observation slots have been added below in Assessment, timed to this shift. Add/remove slots as needed \u2014 everything stays editable.</div>
     </div>
   </div>
 
@@ -154,6 +195,7 @@
     <div class="pillgroup" id="devGroupWounds"></div>
     <div class="hint" style="margin-top:12px;">General care</div>
     <div class="hint" id="postOpVteHint" style="display:none; color:var(--primary); font-weight:600; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius); margin-bottom:6px;">Post-operative patient \u2014 remember to check VTE mechanical prophylaxis (Flowtron/TEDs) is prescribed and in use.</div>
+    <div class="hint" id="dmInsulinHint" style="display:none; color:var(--primary); font-weight:600; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius); margin-bottom:6px;">Patient has diabetes and uses insulin \u2014 document it here. <button type="button" class="reword" style="padding:4px 10px; font-size:0.72rem; margin-left:6px;" onclick="document.querySelector('#dev_insulin input').click()">+ Add insulin</button></div>
     <div class="pillgroup" id="devGroupGeneral"></div>
     <div class="hint" style="margin-top:12px;">Analgesia catheters/pumps</div>
     <div class="pillgroup" id="devGroupAnalgesia"></div>
@@ -959,9 +1001,8 @@ function goToStep(n){
   window.scrollTo({top:0, behavior:'smooth'});
 }
 goToStep(1);
-const DIAGNOSES = [
+const DIAGNOSES_ACUTE = [
   {id:'bowel_obs', label:'Bowel obstruction'},
-  {id:'rib_fx', label:'Rib fractures'},
   {id:'pancreatitis', label:'Pancreatitis'},
   {id:'cholecystitis', label:'Cholecystitis'},
   {id:'appendicitis', label:'Appendicitis'},
@@ -975,14 +1016,8 @@ const DIAGNOSES = [
   {id:'biliary_colic', label:'Biliary colic / gallstones'},
   {id:'pilonidal', label:'Pilonidal sinus disease'},
   {id:'adhesions', label:'Adhesions'},
-  {id:'open_fracture', label:'Open fracture'},
-  {id:'closed_fracture', label:'Closed fracture'},
-  {id:'nof_fracture', label:'Neck of femur fracture'},
-  {id:'ankle_fracture', label:'Ankle fracture'},
-  {id:'wrist_fracture', label:'Wrist/distal radius fracture'},
-  {id:'tib_fib_fracture', label:'Tibia/fibula fracture'},
-  {id:'septic_joint', label:'Septic arthritis / joint infection'},
-  {id:'traumatic_wound', label:'Traumatic wound/laceration'},
+];
+const DIAGNOSES_COLORECTAL = [
   {id:'colorectal_cancer', label:'Colorectal cancer / bowel tumour'},
   {id:'rectal_cancer', label:'Rectal cancer'},
   {id:'colonic_polyp', label:'Colonic polyp(s)'},
@@ -992,8 +1027,28 @@ const DIAGNOSES = [
   {id:'bowel_fistula', label:'Enterocutaneous/anorectal fistula'},
   {id:'rectal_prolapse', label:'Rectal prolapse'},
 ];
+const DIAGNOSES_TRAUMA = [
+  {id:'rib_fx', label:'Rib fractures'},
+  {id:'open_fracture', label:'Open fracture'},
+  {id:'closed_fracture', label:'Closed fracture'},
+  {id:'nof_fracture', label:'Neck of femur fracture'},
+  {id:'ankle_fracture', label:'Ankle fracture'},
+  {id:'wrist_fracture', label:'Wrist/distal radius fracture'},
+  {id:'tib_fib_fracture', label:'Tibia/fibula fracture'},
+  {id:'septic_joint', label:'Septic arthritis / joint infection'},
+  {id:'traumatic_wound', label:'Traumatic wound/laceration'},
+];
+const DIAGNOSES_COMORBID = [
+  {id:'af', label:'Atrial fibrillation (AF)'},
+  {id:'dm', label:'Diabetes mellitus (DM)'},
+  {id:'hypertension', label:'Hypertension'},
+  {id:'ckd', label:'Chronic kidney disease (CKD)'},
+  {id:'copd', label:'COPD'},
+  {id:'ihd', label:'Ischaemic heart disease (IHD)'},
+];
+const DIAGNOSES = DIAGNOSES_ACUTE.concat(DIAGNOSES_COLORECTAL, DIAGNOSES_TRAUMA, DIAGNOSES_COMORBID);
 
-const PROCEDURES = [
+const PROCEDURES_COLORECTAL = [
   {id:'hartmanns', label:"Hartmann's procedure"},
   {id:'right_hemicolectomy', label:'Right hemicolectomy'},
   {id:'left_hemicolectomy', label:'Left hemicolectomy'},
@@ -1002,25 +1057,46 @@ const PROCEDURES = [
   {id:'total_colectomy', label:'Total colectomy'},
   {id:'panproctocolectomy', label:'Panproctocolectomy'},
   {id:'anastomosis', label:'Bowel anastomosis (primary)'},
-  {id:'jejunostomy', label:'Jejunostomy'},
-  {id:'appendicectomy', label:'Appendicectomy'},
-  {id:'cholecystectomy', label:'Cholecystectomy'},
-  {id:'hernia_repair', label:'Hernia repair'},
-  {id:'small_bowel_resection', label:'Small bowel resection'},
-  {id:'laparotomy', label:'Laparotomy'},
-  {id:'adhesiolysis', label:'Adhesiolysis'},
   {id:'anterior_resection', label:'Anterior resection'},
   {id:'apr', label:'Abdominoperineal resection (APR)'},
   {id:'stoma_formation', label:'Stoma formation'},
   {id:'stoma_reversal', label:'Stoma reversal'},
+  {id:'stapled_haemorrhoidectomy', label:'Stapled haemorrhoidectomy'},
+  {id:'rectopexy', label:'Rectopexy'},
+  {id:'eua_biopsy', label:'Examination under anaesthesia (EUA) \u00b1 biopsy'},
+];
+const PROCEDURES_UPPERGI = [
+  {id:'cholecystectomy', label:'Cholecystectomy'},
+  {id:'gastrectomy', label:'Gastrectomy (partial/total)'},
+  {id:'oesophagectomy', label:'Oesophagectomy'},
+  {id:'hiatus_hernia_repair', label:'Hiatus hernia repair / Fundoplication'},
+  {id:'splenectomy', label:'Splenectomy'},
+  {id:'whipples', label:"Whipple's procedure (pancreaticoduodenectomy)"},
+  {id:'bile_duct_exploration', label:'Bile duct exploration'},
+];
+const PROCEDURES_HERNIA = [
+  {id:'hernia_repair', label:'Hernia repair (general)'},
+  {id:'inguinal_hernia_repair', label:'Inguinal hernia repair'},
+  {id:'umbilical_hernia_repair', label:'Umbilical hernia repair'},
+  {id:'incisional_hernia_repair', label:'Incisional hernia repair'},
+];
+const PROCEDURES_EMERGENCY = [
+  {id:'appendicectomy', label:'Appendicectomy'},
+  {id:'small_bowel_resection', label:'Small bowel resection'},
+  {id:'laparotomy', label:'Laparotomy'},
+  {id:'adhesiolysis', label:'Adhesiolysis'},
   {id:'abscess_drainage', label:'Drainage of abscess'},
   {id:'pilonidal_excision', label:'Pilonidal sinus excision'},
+  {id:'jejunostomy', label:'Jejunostomy'},
+];
+const PROCEDURES_ORTHO = [
   {id:'orif', label:'ORIF (Open Reduction Internal Fixation)'},
   {id:'washout', label:'Washout/debridement'},
   {id:'ex_fix', label:'External fixation'},
   {id:'closed_reduction', label:'Closed reduction and casting'},
   {id:'hemiarthroplasty', label:'Hemiarthroplasty'},
 ];
+const PROCEDURES = PROCEDURES_COLORECTAL.concat(PROCEDURES_UPPERGI, PROCEDURES_HERNIA, PROCEDURES_EMERGENCY, PROCEDURES_ORTHO);
 
 const DEVICES_VASCULAR = [
   {id:'cvc', label:'CVC'},
@@ -1050,6 +1126,7 @@ const DEVICES_WOUNDS = [
 const DEVICES_GENERAL = [
   {id:'vte_mech', label:'VTE mechanical prophylaxis (Flowtron/TEDs)'},
   {id:'eol_care', label:'End of life / Individualised Care Plan'},
+  {id:'insulin', label:'Insulin (subcutaneous)'},
 ];
 
 const DEVICES_ANALGESIA = [
@@ -1114,8 +1191,15 @@ function buildPills(container, list, prefix, onchangeExtra){
     el.appendChild(pill);
   });
 }
-buildPills('dxGroup', DIAGNOSES, 'dx');
-buildPills('procGroup', PROCEDURES, 'proc');
+buildPills('dxGroupAcute', DIAGNOSES_ACUTE, 'dx');
+buildPills('dxGroupColorectal', DIAGNOSES_COLORECTAL, 'dx');
+buildPills('dxGroupTrauma', DIAGNOSES_TRAUMA, 'dx');
+buildPills('dxGroupComorbid', DIAGNOSES_COMORBID, 'dx', toggleDMInsulin);
+buildPills('procGroupColorectal', PROCEDURES_COLORECTAL, 'proc');
+buildPills('procGroupUpperGI', PROCEDURES_UPPERGI, 'proc');
+buildPills('procGroupHernia', PROCEDURES_HERNIA, 'proc');
+buildPills('procGroupEmergency', PROCEDURES_EMERGENCY, 'proc');
+buildPills('procGroupOrtho', PROCEDURES_ORTHO, 'proc');
 buildPills('devGroupVascular', DEVICES_VASCULAR, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupFeeding', DEVICES_FEEDING, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupWounds', DEVICES_WOUNDS, 'dev', renderDeviceSectionsSafe);
@@ -1124,7 +1208,7 @@ buildPills('devGroupAnalgesia', DEVICES_ANALGESIA, 'dev', renderDeviceSectionsSa
 buildPills('devGroupPathway', DEVICES_PATHWAY, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupCardiac', DEVICES_CARDIAC, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupSymptoms', DEVICES_SYMPTOMS, 'dev', renderDeviceSectionsSafe);
-function renderDeviceSectionsSafe(){ renderDeviceSections(); updateTPNRefeedingHint(); updatePostOpHints(); }
+function renderDeviceSectionsSafe(){ renderDeviceSections(); updateTPNRefeedingHint(); updatePostOpHints(); updateDMInsulinHint(); }
 function updateTPNRefeedingHint(){
   const tpnTicked = document.querySelector('#dev_tpn input')?.checked;
   const hint = document.getElementById('tpnRefeedingHint');
@@ -1143,12 +1227,26 @@ function addRefeedingBloodEntries(){
 }
 
 function setShift(s){
-  document.querySelectorAll('.shiftbtn').forEach(b=>b.classList.toggle('active', b.dataset.shift===s));
+  document.querySelectorAll('.shiftbtn[data-shift]').forEach(b=>b.classList.toggle('active', b.dataset.shift===s));
   window.currentShift = s;
   document.getElementById('washField').style.display = (s==='night') ? 'none' : 'block';
   document.getElementById('wardRoundField').style.display = (s==='night') ? 'none' : 'block';
+  if(window.patientLocation==='highcare') applyHighCareSlots();
 }
 window.currentShift='day';
+window.patientLocation='ward';
+function setPatientLocation(loc){
+  document.querySelectorAll('.shiftbtn[data-location]').forEach(b=>b.classList.toggle('active', b.dataset.location===loc));
+  window.patientLocation = loc;
+  document.getElementById('highCareHint').style.display = loc==='highcare' ? 'block' : 'none';
+  if(loc==='highcare') applyHighCareSlots();
+}
+function applyHighCareSlots(){
+  const times = window.currentShift==='day' ? ['08:00','10:00','12:00','14:00','16:00','18:00'] : ['20:00','22:00','00:00','02:00','04:00','06:00'];
+  newsEntryCount = times.length;
+  renderNewsEntries();
+  times.forEach((t,i)=>{ const el = document.getElementById('newsEntry_time_'+(i+1)); if(el) el.value = t; });
+}
 
 function toggleReveal(selId, revealId, showVals){
   const v = document.getElementById(selId).value;
@@ -1168,6 +1266,27 @@ function uncheckPeers(el, ...peerIds){
 document.getElementById('B_rib_chk').addEventListener('change', e=>{
   document.getElementById('B_rib_reveal').style.display = e.target.checked ? 'grid' : 'none';
 });
+function toggleDMInsulin(){
+  const dmPill = document.querySelector('#dx_dm input');
+  const dmTicked = dmPill && dmPill.checked;
+  const rev = document.getElementById('dmInsulinReveal');
+  if(rev) rev.classList.toggle('show', dmTicked);
+  const bmRev = document.getElementById('dmBMChartReveal');
+  if(bmRev) bmRev.classList.toggle('show', dmTicked);
+  updateDMInsulinHint();
+}
+function toggleDMBM3am(){
+  const wrap = document.getElementById('dmBM3amWrap');
+  if(wrap) wrap.style.display = getVal('dm_insulin')==='Yes' ? '' : 'none';
+}
+function updateDMInsulinHint(){
+  const dmPill = document.querySelector('#dx_dm input');
+  const dmTicked = dmPill && dmPill.checked;
+  const insulinYes = getVal('dm_insulin')==='Yes';
+  const hint = document.getElementById('dmInsulinHint');
+  const insulinTicked = document.querySelector('#dev_insulin input')?.checked;
+  if(hint) hint.style.display = (dmTicked && insulinYes && !insulinTicked) ? 'block' : 'none';
+}
 function applyPostOpDefaults(){
   const isPostOp = document.getElementById('postop_chk').checked;
   if(isPostOp){
@@ -2126,6 +2245,34 @@ const ELECTROLYTE_ABNORMALITIES = [
 ];
 
 const DEVICE_TEMPLATES = {
+  insulin: {
+    title:'Insulin (subcutaneous)',
+    fields:[
+      {id:'insulin_regimen', label:'Regimen', type:'select', options:['Basal-bolus (multiple daily injections)','Twice-daily mixed','Once-daily long-acting only','Insulin pump (CSII)','Variable rate IV infusion (see Sliding Scale/VRIII device)']},
+      {id:'insulin_type', label:'Insulin type/brand', type:'select_other', options:['NovoRapid (aspart, rapid-acting)','Humalog (lispro, rapid-acting)','Apidra (glulisine, rapid-acting)','Fiasp (aspart, ultra-rapid)','Actrapid (soluble, short-acting)','Insulatard (isophane, intermediate)','Lantus (glargine, long-acting)','Levemir (detemir, long-acting)','Toujeo (glargine U300, long-acting)','Tresiba (degludec, ultra-long-acting)','NovoMix 30 (mixed)','Humalog Mix 25 (mixed)','Humalog Mix 50 (mixed)','Humulin M3 (mixed)']},
+      {id:'insulin_dose', label:'Dose/timing (as individually prescribed)', type:'text', placeholder:'e.g. 10 units before breakfast, 8 units before dinner; Lantus 20 units at 22:00'},
+      {id:'insulin_given', label:'Status', type:'select', options:['Given as prescribed','Withheld']},
+      {id:'insulin_withhold_reason', label:'Reason withheld (if applicable)', type:'text', placeholder:'e.g. NBM, hypoglycaemia, BM not yet checked'},
+      {id:'insulin_bm', label:'Most recent BM/blood glucose (optional)', type:'text', placeholder:'e.g. 7.2mmol/L at 08:00'},
+    ],
+    build:(f)=>{
+      const regimen=f.insulin_regimen||'Basal-bolus (multiple daily injections)', type=f.insulin_type||'[type/brand]';
+      const dose=f.insulin_dose||'[dose/timing as prescribed]', status=f.insulin_given||'Given as prescribed';
+      const withholdReason=f.insulin_withhold_reason, bm=f.insulin_bm;
+
+      let base = pick([
+        `Insulin (${regimen.toLowerCase()}) \u2014 ${type}, ${dose}.`,
+        `Patient on insulin, ${regimen.toLowerCase()} regimen \u2014 ${type}, ${dose}.`
+      ]);
+      if(status==='Withheld'){
+        base += ` Dose withheld${withholdReason?': '+withholdReason:''} \u2014 surgical SHO/diabetes team informed.`;
+      } else {
+        base += ' Given as prescribed.';
+      }
+      if(bm) base += ` Most recent blood glucose: ${bm}.`;
+      return base;
+    }
+  },
   vte_mech: {
     title:'VTE mechanical prophylaxis',
     fields:[
@@ -2960,7 +3107,22 @@ function renderDeviceSections(){
       for(let i=1;i<=drainEntryCount;i++){
         rows += `<div class="row2">
           <div><label class="field">Drain ${i} site</label><input type="text" id="drain_site_${i}" placeholder="e.g. RIF drain"></div>
-          <div><label class="field">Drain ${i} amount &amp; colour</label><input type="text" id="drain_amount_${i}" placeholder="e.g. 30ml serosanguinous"></div>
+          <div><label class="field">Drain ${i} volume</label><input type="text" id="drain_vol_${i}" placeholder="e.g. 30ml"></div>
+        </div>
+        <div class="row2">
+          <div><label class="field">Drain ${i} fluid type</label><select id="drain_fluid_${i}" onchange="toggleOtherField('drain_fluid_${i}')">
+            <option value="Serous (clear/pale straw-coloured)">Serous (clear/pale straw-coloured)</option>
+            <option value="Serosanguinous (pink-tinged, thin)">Serosanguinous (pink-tinged, thin)</option>
+            <option value="Sanguinous (fresh blood, red)">Sanguinous (fresh blood, red)</option>
+            <option value="Old/altered blood (dark red-brown)">Old/altered blood (dark red-brown)</option>
+            <option value="Seropurulent (cloudy, early infection sign)">Seropurulent (cloudy, early infection sign)</option>
+            <option value="Purulent (thick pus, yellow/green/brown, offensive odour)">Purulent (thick pus, yellow/green/brown, offensive odour)</option>
+            <option value="Bilious (green/dark green-brown, bile-stained)">Bilious (green/dark green-brown, bile-stained)</option>
+            <option value="Chylous (milky white)">Chylous (milky white)</option>
+            <option value="Faeculent (brown, faecal odour)">Faeculent (brown, faecal odour)</option>
+            <option value="Other (specify)">Other (specify)</option>
+          </select>
+          <input type="text" id="drain_fluid_${i}_other" placeholder="specify..." style="display:none; margin-top:4px;"></div>
         </div>`;
       }
       const removeBtn = drainEntryCount>1 ? `<button type="button" class="reword" style="padding:6px 12px; font-size:0.78rem;" onclick="removeDrainEntry()">\u2212 Remove last drain</button>` : '';
@@ -3142,6 +3304,7 @@ function renderDeviceSections(){
     if(devId==='ciwa'){ updateCiwaScore(); }
     if(devId==='ribpathway'){ toggleRibPainEscalation(); toggleRibReferralSlip(); updateRibScore(); }
     if(devId==='metcall'){ MET_CRITERIA.forEach((entry,idx)=>toggleMetCriteria(idx)); }
+    if(devId==='drain'){ for(let i=1;i<=drainEntryCount;i++) toggleOtherField('drain_fluid_'+i); }
     if(devId==='rsc'){ RSC_CONDITIONS.forEach((entry,idx)=>{ if(entry.i) toggleComplicationNested('rsc', idx); else toggleComplicationReaction('rsc', idx); }); }
     if(devId==='epidural'){ EPIDURAL_CONDITIONS.forEach((entry,idx)=>{ if(entry.i) toggleComplicationNested('epi_comp', idx); else toggleComplicationReaction('epi_comp', idx); }); }
     if(devId==='pca'){ PCA_CONDITIONS.forEach((entry,idx)=>{ if(entry.i) toggleComplicationNested('pca_comp', idx); else toggleComplicationReaction('pca_comp', idx); }); }
@@ -3243,17 +3406,23 @@ function buildDrainTexts(){
   const out = [];
   for(let i=1;i<=drainEntryCount;i++){
     const site = getVal('drain_site_'+i);
-    const amt = getVal('drain_amount_'+i);
-    if(!site && !amt) continue;
-    const s = site || '[site]', a = amt || '[amount/colour]';
+    const vol = getVal('drain_vol_'+i);
+    let fluidSel = getVal('drain_fluid_'+i);
+    if(fluidSel==='Other (specify)') fluidSel = getVal('drain_fluid_'+i+'_other');
+    if(!site && !vol && !fluidSel) continue;
+    const s = site || '[site]', v = vol || '[volume]', fl = fluidSel || '[fluid type]';
     const tag = drainEntryCount>1 ? `(${i}) ` : '';
-    out.push(pick([
-      `Drain ${tag}in situ at ${s}, draining ${a}. Drain secured and patent, dressing changed during shift.`,
-      `Drain ${tag}at ${s} draining ${a}, remains secured and patent; dressing changed this shift.`
-    ]));
+    let line = pick([
+      `Drain ${tag}in situ at ${s}, draining ${v} ${fl.toLowerCase()}. Drain secured and patent, dressing changed during shift.`,
+      `Drain ${tag}at ${s} draining ${v} ${fl.toLowerCase()}, remains secured and patent; dressing changed this shift.`
+    ]);
+    if(fluidSel.startsWith('Purulent') || fluidSel.startsWith('Faeculent') || fluidSel.startsWith('Chylous')){
+      line += ' Finding discussed with surgical team \u2014 clinically significant, further management as advised.';
+    }
+    out.push(line);
   }
   if(out.length===0){
-    out.push(`Drain in situ at [site], draining [amount/colour]. Drain secured and patent, dressing changed during shift.`);
+    out.push(`Drain in situ at [site], draining [volume] [fluid type]. Drain secured and patent, dressing changed during shift.`);
   }
   return out;
 }
@@ -3307,7 +3476,7 @@ function buildOpening(){
   const lines0 = [];
   if(document.getElementById('postop_chk').checked){
     const day = getVal('postop_day');
-    const procChecked = Array.from(document.querySelectorAll('#procGroup input:checked')).map(i=>i.value);
+    const procChecked = Array.from(document.querySelectorAll('#procGroupColorectal input:checked, #procGroupUpperGI input:checked, #procGroupHernia input:checked, #procGroupEmergency input:checked, #procGroupOrtho input:checked')).map(i=>i.value);
     const procLabels = PROCEDURES.filter(p=>procChecked.includes(p.id)).map(p=>p.label);
     const procTxt = procLabels.length ? ` following ${procLabels.join(', ').toLowerCase()}` : '';
     lines0.push(`${day}${procTxt}.`);
@@ -3594,6 +3763,21 @@ function buildNoteText(){
     if(supplementary.length) lines.push(...supplementary);
   }
   lines.push('');
+
+  if(document.querySelector('#dx_dm input')?.checked){
+    const bmSlots = [
+      ['3am', getVal('dm_bm_3am')],
+      ['pre-breakfast', getVal('dm_bm_breakfast')],
+      ['pre-lunch', getVal('dm_bm_lunch')],
+      ['pre-tea', getVal('dm_bm_tea')],
+      ['pre-bedtime', getVal('dm_bm_bedtime')],
+    ].filter(([,v])=>v);
+    if(bmSlots.length){
+      lines.push('BM monitoring (diabetic):');
+      lines.push(bmSlots.map(([label,v])=>`${label}: ${v}`).join(', ') + '.');
+      lines.push('');
+    }
+  }
 
   const mobSelected = getVal('mobilitySelect');
   if(mobSelected && MOBILITY_PHRASES[mobSelected]){
