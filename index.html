@@ -162,7 +162,7 @@
           <option value="Day 3 post-op">Day 3 post-op</option>
           <option value="Day 4+ post-op">Day 4+ post-op</option>
         </select>
-        <div class="hint">Ticking this applies sensible post-operative defaults through the rest of the form (diet/fluid reason, mobilisation and VTE prompts) \u2014 everything stays fully editable.</div>
+        <div class="hint">Ticking this applies sensible post-operative defaults through the rest of the form (diet/fluid reason, mobilisation and VTE prompts) — everything stays fully editable.</div>
       </div>
     </div>
     <div class="card">
@@ -176,7 +176,7 @@
         <div class="shiftbtn active" data-location="ward" onclick="setPatientLocation('ward')">Ward</div>
         <div class="shiftbtn" data-location="highcare" onclick="setPatientLocation('highcare')">High Care</div>
       </div>
-      <div class="hint" id="highCareHint" style="display:none; margin-top:6px;">2-hourly observation slots have been added below in Assessment, timed to this shift. Add/remove slots as needed \u2014 everything stays editable.</div>
+      <div class="hint" id="highCareHint" style="display:none; margin-top:6px;">2-hourly observation slots have been added below in Assessment, timed to this shift. Add/remove slots as needed — everything stays editable.</div>
     </div>
   </div>
 
@@ -194,9 +194,11 @@
     <div class="hint" style="margin-top:12px;">Wounds &amp; drains</div>
     <div class="pillgroup" id="devGroupWounds"></div>
     <div class="hint" style="margin-top:12px;">General care</div>
-    <div class="hint" id="postOpVteHint" style="display:none; color:var(--primary); font-weight:600; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius); margin-bottom:6px;">Post-operative patient \u2014 remember to check VTE mechanical prophylaxis (Flowtron/TEDs) is prescribed and in use.</div>
-    <div class="hint" id="dmInsulinHint" style="display:none; color:var(--primary); font-weight:600; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius); margin-bottom:6px;">Patient has diabetes and uses insulin \u2014 document it here. <button type="button" class="reword" style="padding:4px 10px; font-size:0.72rem; margin-left:6px;" onclick="document.querySelector('#dev_insulin input').click()">+ Add insulin</button></div>
+    <div class="hint" id="postOpVteHint" style="display:none; color:var(--primary); font-weight:600; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius); margin-bottom:6px;">Post-operative patient — remember to check VTE mechanical prophylaxis (Flowtron/TEDs) is prescribed and in use.</div>
+    <div class="hint" id="dmInsulinHint" style="display:none; color:var(--primary); font-weight:600; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius); margin-bottom:6px;">Patient has diabetes and uses insulin — document it here. <button type="button" class="reword" style="padding:4px 10px; font-size:0.72rem; margin-left:6px;" onclick="document.querySelector('#dev_insulin input').click()">+ Add insulin</button></div>
     <div class="pillgroup" id="devGroupGeneral"></div>
+    <div class="hint" style="margin-top:12px;">Investigations / samples</div>
+    <div class="pillgroup" id="devGroupInvest"></div>
     <div class="hint" style="margin-top:12px;">Analgesia catheters/pumps</div>
     <div class="pillgroup" id="devGroupAnalgesia"></div>
     <div class="hint" style="margin-top:12px;">Rib fracture &amp; metabolic pathways</div>
@@ -541,7 +543,7 @@
 <!-- MOBILITY -->
   <div class="card">
     <h2>Mobility</h2>
-    <div class="hint" id="postOpMobHint" style="display:none; color:var(--primary); font-weight:600; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius); margin-bottom:8px;">Post-operative patient \u2014 early mobilisation is a key recovery priority; encourage sitting out/mobilising as able unless otherwise advised.</div>
+    <div class="hint" id="postOpMobHint" style="display:none; color:var(--primary); font-weight:600; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius); margin-bottom:8px;">Post-operative patient — early mobilisation is a key recovery priority; encourage sitting out/mobilising as able unless otherwise advised.</div>
     <select id="mobilitySelect">
       <optgroup label="Mobile (no walking aid)">
         <option value="mobile_indep">Independent</option>
@@ -1129,6 +1131,11 @@ const DEVICES_GENERAL = [
   {id:'insulin', label:'Insulin (subcutaneous)'},
 ];
 
+const DEVICES_INVEST = [
+  {id:'bloodgas', label:'VBG / ABG'},
+  {id:'bloodsamples', label:'Blood samples / bloods'},
+];
+
 const DEVICES_ANALGESIA = [
   {id:'pca', label:'PCA'},
   {id:'rsc', label:'Rectus Sheath Catheter'},
@@ -1204,6 +1211,7 @@ buildPills('devGroupVascular', DEVICES_VASCULAR, 'dev', renderDeviceSectionsSafe
 buildPills('devGroupFeeding', DEVICES_FEEDING, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupWounds', DEVICES_WOUNDS, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupGeneral', DEVICES_GENERAL, 'dev', renderDeviceSectionsSafe);
+buildPills('devGroupInvest', DEVICES_INVEST, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupAnalgesia', DEVICES_ANALGESIA, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupPathway', DEVICES_PATHWAY, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupCardiac', DEVICES_CARDIAC, 'dev', renderDeviceSectionsSafe);
@@ -1407,9 +1415,15 @@ function toggleRibReferralSlip(){
   if(rev) rev.classList.toggle('show', val.startsWith('Step 3'));
 }
 function toggleNGFeedingChecklist(){
-  const isFeeding = getVal('ng_reason').startsWith('Enteral feeding');
+  const reasonVal = getVal('ng_reason');
+  const isFeeding = reasonVal.startsWith('Enteral feeding');
+  const isDecompression = reasonVal.startsWith('Gastric decompression');
   const rev = document.getElementById('ngFeedingChecklist');
   if(rev) rev.classList.toggle('show', isFeeding);
+  const phBlock = document.getElementById('ngPhTestingBlock');
+  if(phBlock) phBlock.classList.toggle('show', !isDecompression);
+  const decompBlock = document.getElementById('ngDecompressionBlock');
+  if(decompBlock) decompBlock.classList.toggle('show', isDecompression);
   const modeSel = document.getElementById('ng_mode');
   if(modeSel){
     const current = modeSel.value;
@@ -2178,7 +2192,8 @@ function updateGasInterp(prefix){
   const ph=getVal(prefix+'_ph'), pco2=getVal(prefix+'_pco2'), hco3=getVal(prefix+'_hco3'), lactate=getVal(prefix+'_lactate'), k=getVal(prefix+'_k');
   const msgs = interpretGas(ph,pco2,hco3,lactate,k);
   const interpEl = document.getElementById(prefix+'_gasInterp');
-  if(interpEl) interpEl.textContent = msgs.length ? msgs.join(' ') : 'Values within normal range.';
+  const anyValue = [ph,pco2,hco3,lactate,k].some(v=>v!=='' && v!==undefined);
+  if(interpEl) interpEl.textContent = !anyValue ? 'Enter results to see interpretation.' : (msgs.length ? msgs.join(' ') : 'Values within normal range.');
 }
 function abgText(f, prefix){
   const gas = f[prefix+'_gas'];
@@ -2237,6 +2252,11 @@ const PCA_CONDITIONS = [
   {c:'Inadequate analgesia despite appropriate PCA use', r:'Pain and PCA demand/delivery ratio reassessed, acute pain team contacted, background/bolus settings reviewed.'},
   {c:'Persistent nausea/vomiting despite antiemetics', r:'Antiemetic given/reviewed, acute pain team/anaesthetist informed if ongoing.'},
 ];
+const BLOOD_TESTS = [
+  'FBC','U&E','LFTs','CRP','Coagulation screen (clotting)','Bone profile / calcium','Magnesium','Phosphate',
+  'Amylase / lipase','Lactate (lab)','Troponin','Blood cultures','Group & save','Crossmatch',
+  'Gentamicin level','Vancomycin level','HbA1c','Glucose (lab)','CK','TFTs',
+];
 const NG_PH_REASONS = [
   'A \u2014 Routine check (\u226424hrs, or 4\u20136hrs if higher aspiration risk)',
   'B \u2014 Starting a new bag of feed',
@@ -2270,6 +2290,44 @@ const ELECTROLYTE_ABNORMALITIES = [
 ];
 
 const DEVICE_TEMPLATES = {
+  bloodgas: {
+    title:'VBG / ABG',
+    gasPrefix:'bg',
+    fields:[
+      {id:'bg_gas', label:'Type', type:'select', options:['VBG','ABG']},
+      {id:'bg_time', label:'Time taken', type:'text', placeholder:'e.g. 14:30'},
+      {id:'bg_site', label:'Sample taken from', type:'select_other', options:['','Peripheral venepuncture','Peripheral cannula (PVD)','PICC','CVC','Arterial line','Radial artery stab','Femoral artery stab']},
+      {id:'bg_reason', label:'Indication', type:'select_other', options:['','Raised NEWS2 / clinical deterioration','Query sepsis (lactate)','Respiratory concern / on oxygen therapy','Electrolyte check (K+ / refeeding)','Metabolic or acid-base concern (e.g. DKA, AKI)','Post-operative monitoring','Routine high care monitoring','Requested by surgical team']},
+      ...abgFields('bg').slice(1),
+    ],
+    build:(f)=>{
+      const site=f.bg_site, reason=f.bg_reason, time=f.bg_time;
+      const base = pick([
+        `Blood gas sampled${time?' at '+time:''}${site?' from '+site:''}${reason?' ('+reason+')':''}.`,
+        `Blood gas obtained${time?' at '+time:''}${site?' via '+site:''}${reason?' \u2014 indication: '+reason:''}.`
+      ]);
+      return base + abgText(f,'bg');
+    }
+  },
+  bloodsamples: {
+    title:'Blood samples / bloods',
+    bloodTests: true,
+    fields:[
+      {id:'bs_time', label:'Time taken', type:'text', placeholder:'e.g. 06:00'},
+      {id:'bs_site', label:'Taken from', type:'select_other', options:['','Peripheral venepuncture','Peripheral cannula (PVD)','PICC','CVC','Arterial line']},
+      {id:'bs_reason', label:'Indication', type:'select_other', options:['','Routine daily bloods','Raised NEWS2 / query sepsis','Post-operative bloods','Refeeding bloods (TPN)','Drug level monitoring','Requested by surgical team','Pre-transfusion (group & save/crossmatch)','Add-on request to existing sample']},
+    ],
+    build:(f)=>{
+      const time=f.bs_time, site=f.bs_site, reason=f.bs_reason;
+      const tests = BLOOD_TESTS.filter((t,idx)=>document.getElementById('bs_test_'+idx)?.checked);
+      const other = getVal('bs_test_other');
+      if(other) tests.push(other);
+      const status = getVal('bs_status');
+      let base = `Blood samples taken${time?' at '+time:''}${site?' from '+site:''}${reason?' ('+reason+')':''}: ${tests.length ? tests.join(', ') : '[tests]'}.`;
+      if(status) base += ` ${status}.`;
+      return base;
+    }
+  },
   insulin: {
     title:'Insulin (subcutaneous)',
     fields:[
@@ -2347,45 +2405,24 @@ const DEVICE_TEMPLATES = {
   },
   pca: {
     title:'PCA',
+    pcaChart: true,
     complicationsList: PCA_CONDITIONS,
     complicationsPrefix: 'pca_comp',
     fields:[
       {id:'pca_drug', label:'Drug', type:'select_other', options:['Morphine','Oxycodone','Fentanyl','Hydromorphone']},
-      {id:'pca_sed', label:'Sedation score /3', type:'number'},
-      {id:'pca_rest', label:'Pain at rest', type:'select', options:['None','Mild','Moderate','Severe']},
-      {id:'pca_move', label:'Pain on movement', type:'select', options:['None','Mild','Moderate','Severe']},
-      {id:'pca_nausea', label:'Nausea', type:'select', options:['None','Mild','Moderate','Severe']},
-      {id:'pca_pruritus', label:'Pruritus', type:'select', options:['None','Mild','Moderate','Severe']},
-      {id:'pca_demands', label:'Demands/delivered (compliance)', type:'text', placeholder:'e.g. 12 demands, 10 delivered'},
       {id:'pca_site', label:'Cannula site', type:'select', options:['Clean and dry','Red/swollen','Leaking']},
+      {id:'pca_other', label:'Other side effects/notes (optional)', type:'text', placeholder:'e.g. pruritus, demands vs delivered'},
     ],
     build:(f)=>{
-      const drug=f.pca_drug||'[drug]', sed=f.pca_sed||'0';
-      const rest=paintText((f.pca_rest||'none').toLowerCase()), move=paintText((f.pca_move||'none').toLowerCase());
-      const nausea=f.pca_nausea, pruritus=f.pca_pruritus, demands=f.pca_demands, site=f.pca_site||'Clean and dry';
-      const sedNum = parseFloat(sed);
-      const sedTxt = sedNum>=3 ? `Sedation score ${sed}/3 \u2014 excessive sedation.` : sedNum>=2 ? `Sedation score ${sed}/3 \u2014 drowsy but rousable.` : `Sedation score ${sed}/3, no signs of opioid toxicity.`;
+      const drug=f.pca_drug||'[drug]', site=f.pca_site||'Clean and dry', other=f.pca_other;
       let base = pick([
-        `PCA in situ delivering ${drug} via patient-controlled bolus. ${sedTxt} Reports ${rest} at rest and ${move} on movement. Patient understands and is safely using the PCA device.`,
-        `PCA running with ${drug}, patient self-administering boluses appropriately. ${sedTxt} ${capitalize(rest)} at rest, ${move} on movement.`
+        `PCA in situ delivering ${drug} via patient-controlled bolus.`,
+        `PCA running with ${drug}, patient self-administering boluses.`
       ]);
-      if(nausea && nausea!=='None') base += ` ${nausea} nausea reported${pruritus && pruritus!=='None' ? ', '+pruritus.toLowerCase()+' pruritus noted' : ''}.`;
-      else if(pruritus && pruritus!=='None') base += ` ${pruritus} pruritus noted.`;
-      if(demands) base += ` PCA usage: ${demands}.`;
+      base += ' ' + buildPcaObsText();
+      if(other) base += ` ${capitalize(other)}.`;
       const siteMap = {'Clean and dry':'Cannula site clean and dry.', 'Red/swollen':'Cannula site red/swollen \u2014 resited, surgical team aware.', 'Leaking':'Cannula site leaking \u2014 resited.'};
       base += ' ' + (siteMap[site] || siteMap['Clean and dry']);
-      const rrVal = getVal('v_rr');
-      if(rrVal!=='' && !isNaN(sedNum)){
-        const rrNum = parseFloat(rrVal);
-        if(sedNum>=3 || rrNum<7){
-          const reasons = [];
-          if(sedNum>=3) reasons.push(`sedation score ${sed}/3`);
-          if(rrNum<7) reasons.push(`RR ${rrVal}/min`);
-          base += ` Concern for opioid-related over-sedation/respiratory depression (${reasons.join(', ')}) \u2014 PCA stopped, oxygen given, surgical SHO/Acute Pain Team informed urgently, naloxone considered.`;
-        } else if(rrNum<9 && sedNum>=2){
-          base += ` Mild-moderate opioid-related sedation noted (RR ${rrVal}/min, sedation ${sed}/3) \u2014 closely monitored, Acute Pain Team informed.`;
-        }
-      }
       const {observed} = collectComplications(PCA_CONDITIONS, 'pca_comp');
       observed.forEach(line=>{ base += ` ${line}`; });
       return base;
@@ -3004,17 +3041,21 @@ const DEVICE_TEMPLATES = {
       {id:'ng_reason', label:'Reason for insertion', type:'select_other', options:['Gastric decompression (bowel obstruction/ileus)','Enteral feeding (nutritional support)','Medication administration','Gastric content aspiration/sampling','Gastric lavage (overdose/toxic ingestion)']},
       {id:'ng_mode', label:'Mode', type:'select', options:['free drainage','clamped','on feed']},
       {id:'ng_aspirate', label:'Aspirate amount/colour', type:'text', placeholder:'e.g. 40ml bile-stained'},
-      {id:'ng_ph', label:'pH of aspirate', type:'number'},
       {id:'ng_length', label:'Position of NG \u2014 cm at nostril (compare with insertion record)', type:'text'},
       {id:'ng_feedstart', label:'Feed started at (if on feed)', type:'text', placeholder:'e.g. 20:00'},
     ],
     build:(f)=>{ const reason=f.ng_reason||'Gastric decompression (bowel obstruction/ileus)';
-      const mode=f.ng_mode||'free drainage', asp=f.ng_aspirate||'[amount/colour]', len=f.ng_length||'[X]', ph=f.ng_ph, feedStart=f.ng_feedstart;
-      const phReasons = NG_PH_REASONS.filter((r,idx)=>document.getElementById('ng_phreason_'+idx)?.checked);
-      const phReasonOther = getVal('ng_phreason_other');
-      if(phReasonOther) phReasons.push(phReasonOther);
+      const isDecompression = reason.startsWith('Gastric decompression');
+      const mode=f.ng_mode||'free drainage', asp=f.ng_aspirate||'[amount/colour]', len=f.ng_length||'[X]', feedStart=f.ng_feedstart;
+      const ph = isDecompression ? '' : getVal('ng_ph');
       const feedStartTxt = (mode==='on feed' && feedStart) ? ` Feed started at ${feedStart}.` : '';
-      const phReasonTxt = phReasons.length ? ` Reason for pH testing: ${phReasons.join('; ')}.` : '';
+      let phReasonTxt = '';
+      if(!isDecompression){
+        const phReasons = NG_PH_REASONS.filter((r,idx)=>document.getElementById('ng_phreason_'+idx)?.checked);
+        const phReasonOther = getVal('ng_phreason_other');
+        if(phReasonOther) phReasons.push(phReasonOther);
+        phReasonTxt = phReasons.length ? ` Reason for pH testing: ${phReasons.join('; ')}.` : '';
+      }
       let base;
       if(ph && parseFloat(ph)>5.5){
         base = pick([
@@ -3027,6 +3068,17 @@ const DEVICE_TEMPLATES = {
           `NG tube in situ (${reason.toLowerCase()}), ${mode}. Aspirate ${asp}.${phTxt}${phReasonTxt} Position checked and confirmed prior to use, secured at ${len}cm at the nostril.${feedStartTxt}`,
           `NG tube ${mode} (${reason.toLowerCase()}), aspirate ${asp}.${phTxt}${phReasonTxt} Position confirmed before use, secured ${len}cm at nostril.${feedStartTxt}`
         ]);
+      }
+      if(isDecompression){
+        const suction=getVal('ng_suction'), distension=getVal('ng_distension'), bowelSounds=getVal('ng_bowelsounds'), patency=getVal('ng_patency'), nausea=getVal('ng_nausea');
+        const decompParts = [];
+        if(suction) decompParts.push(`suction: ${suction.toLowerCase()}`);
+        if(distension) decompParts.push(`abdominal distension ${distension.toLowerCase()}`);
+        if(bowelSounds) decompParts.push(`bowel sounds ${bowelSounds.toLowerCase()}`);
+        if(patency) decompParts.push(patency.toLowerCase());
+        if(nausea) decompParts.push(`nausea ${nausea.toLowerCase()}`);
+        if(decompParts.length) base += ` ${capitalize(decompParts.join(', '))}.`;
+        if(patency && patency.startsWith('Blocked')) base += ' Surgical SHO informed.';
       }
 
       if(reason.startsWith('Enteral feeding')){
@@ -3134,6 +3186,96 @@ const DEVICE_TEMPLATES = {
   },
 };
 
+let pcaObsCount = 1;
+function addPcaObs(){ pcaObsCount++; renderDeviceSections(); }
+function removePcaObs(){ if(pcaObsCount>1){ pcaObsCount--; renderDeviceSections(); } }
+const PCA_PAIN_LBL=['none','mild','moderate','severe'];
+const PCA_SED_LBL={A:'alert',V:'drowsy',P:'responds to pain only',U:'unresponsive'};
+const PCA_NV_LBL=['none','nausea only','1 episode of vomiting in last hour','>1 episode of vomiting in last hour'];
+const PCA_CONTACTS='Acute Pain Team bleep 238 (WRH)/1266 (ALX); on-call anaesthetist 700 (WRH)/1933 (ALX)';
+function pcaRangeTxt(nums){ if(!nums.length) return null; const mn=Math.min(...nums), mx=Math.max(...nums); return mn===mx ? `${mn}` : `${mn}\u2013${mx}`; }
+function pcaObsFlags(i){
+  const flags=[];
+  const rr=getVal('pca_obs_rr_'+i);
+  if(rr!==''){
+    const r=parseFloat(rr);
+    if(r<=6) flags.push({label:`RR ${rr}/min (\u22646)`, instr:'remove handset, call Acute Pain Team or 1st on-call anaesthetist, administer naloxone, call for medical help', esc:true});
+    else if(r<=8) flags.push({label:`RR ${rr}/min (\u22648)`, instr:'remove handset, call Acute Pain Team or 1st on-call anaesthetist', esc:true});
+    else if(r<=10) flags.push({label:`RR ${rr}/min (\u226410)`, instr:'increase observations to every 30 minutes', esc:false});
+  }
+  const sed=getVal('pca_obs_sed_'+i);
+  if(sed==='U') flags.push({label:'Sedation U (unresponsive)', instr:'remove handset, administer naloxone, call for medical help', esc:true});
+  else if(sed==='P') flags.push({label:'Sedation P (responds to pain only)', instr:'escalate \u2014 call Acute Pain Team or 1st on-call anaesthetist, consider removing handset', esc:true});
+  const pr=getVal('pca_obs_rest_'+i), pm=getVal('pca_obs_move_'+i);
+  if(pr==='2'||pr==='3') flags.push({label:`Pain at rest ${pr}/3 (${PCA_PAIN_LBL[+pr]})`, instr:'call Acute Pain Team or 1st on-call anaesthetist', esc:true});
+  if(pm==='2'||pm==='3') flags.push({label:`Pain on movement ${pm}/3 (${PCA_PAIN_LBL[+pm]})`, instr:'call Acute Pain Team or 1st on-call anaesthetist', esc:true});
+  return flags;
+}
+function updatePcaObsWarn(i){
+  const el=document.getElementById('pca_obs_warn_'+i);
+  if(!el) return;
+  const flags=pcaObsFlags(i);
+  el.textContent = flags.length ? '\u26a0 ' + flags.map(fl=>`${fl.label}: ${fl.instr}`).join(' \u2022 ') + (flags.some(fl=>fl.esc) ? ` (${PCA_CONTACTS})` : '') : '';
+}
+function buildPcaObsText(){
+  const entries=[];
+  for(let i=1;i<=pcaObsCount;i++){
+    const e={i, time:getVal('pca_obs_time_'+i), rest:getVal('pca_obs_rest_'+i), move:getVal('pca_obs_move_'+i), sed:getVal('pca_obs_sed_'+i), nv:getVal('pca_obs_nv_'+i), rr:getVal('pca_obs_rr_'+i), vtbi:getVal('pca_obs_vtbi_'+i), given:getVal('pca_obs_given_'+i), cum:getVal('pca_obs_cum_'+i), esc:getVal('pca_obs_esc_'+i), action:getVal('pca_obs_action_'+i)};
+    if([e.time,e.rest,e.move,e.sed,e.nv,e.rr,e.vtbi,e.given,e.cum].some(v=>v!=='')) entries.push(e);
+  }
+  if(!entries.length) return 'PCA observations per chart: [not entered].';
+  let text;
+  if(entries.length===1){
+    const e=entries[0], p=[];
+    if(e.rest!=='' || e.move!==''){
+      const a=[];
+      if(e.rest!=='') a.push(`${e.rest}/3 at rest (${PCA_PAIN_LBL[+e.rest]})`);
+      if(e.move!=='') a.push(`${e.move}/3 on movement (${PCA_PAIN_LBL[+e.move]})`);
+      p.push('pain '+a.join(', '));
+    }
+    if(e.sed!=='') p.push(`sedation ${e.sed} (${PCA_SED_LBL[e.sed]})`);
+    if(e.nv!=='') p.push(`nausea/vomiting score ${e.nv} (${PCA_NV_LBL[+e.nv]})`);
+    if(e.rr!=='') p.push(`RR ${e.rr}/min`);
+    if(e.vtbi!=='') p.push(`volume remaining in syringe ${e.vtbi}`);
+    if(e.given!=='') p.push(`${e.given} given since last reading`);
+    if(e.cum!=='') p.push(`cumulative opioid given ${e.cum}`);
+    text = `PCA observations${e.time?' at '+e.time:''}: ${p.join(', ')}.`;
+  } else {
+    const restN=entries.filter(e=>e.rest!=='').map(e=>+e.rest), moveN=entries.filter(e=>e.move!=='').map(e=>+e.move);
+    const rrN=entries.filter(e=>e.rr!=='').map(e=>parseFloat(e.rr)), nvN=entries.filter(e=>e.nv!=='').map(e=>+e.nv);
+    const seds=[...new Set(entries.filter(e=>e.sed!=='').map(e=>e.sed))];
+    const times=entries.map(e=>e.time).filter(Boolean);
+    const parts=[];
+    if(restN.length) parts.push(`pain at rest ${pcaRangeTxt(restN)}/3`);
+    if(moveN.length) parts.push(`pain on movement ${pcaRangeTxt(moveN)}/3`);
+    if(seds.length) parts.push(seds.length===1 ? `sedation ${seds[0]} (${PCA_SED_LBL[seds[0]]}) throughout` : `sedation ${seds.join('/')}`);
+    if(nvN.length) parts.push(`nausea/vomiting score ${pcaRangeTxt(nvN)}`);
+    if(rrN.length) parts.push(`RR ${pcaRangeTxt(rrN)}/min`);
+    const vt=entries.filter(e=>e.vtbi!==''), cu=entries.filter(e=>e.cum!==''), gv=entries.filter(e=>e.given!=='');
+    if(vt.length>=2) parts.push(`volume remaining in syringe ${vt[0].vtbi} \u2192 ${vt[vt.length-1].vtbi}`); else if(vt.length===1) parts.push(`volume remaining in syringe ${vt[0].vtbi}`);
+    if(gv.length) parts.push(`given since last reading: ${gv.map(e=>e.given).join(', ')}`);
+    if(cu.length>=2) parts.push(`cumulative opioid given ${cu[0].cum} \u2192 ${cu[cu.length-1].cum}`); else if(cu.length===1) parts.push(`cumulative opioid given ${cu[0].cum}`);
+    text = `PCA observations per chart ${times.length?'('+times.join(', ')+')':'('+entries.length+' readings)'}: ${parts.join('; ')}.`;
+  }
+  const flagLines=[];
+  entries.forEach(e=>{
+    const flags=pcaObsFlags(e.i);
+    const at = e.time ? `At ${e.time}` : `Reading ${e.i}`;
+    if(flags.length){
+      let line = `${at}: ` + flags.map(fl=>`${fl.label} \u2014 per PCA chart: ${fl.instr}`).join('; ') + '.';
+      if(flags.some(fl=>fl.esc)){
+        line += e.esc==='Y' ? ' Escalated as per PCA chart.' : ` Escalation required per PCA chart (${PCA_CONTACTS}) \u2014 not yet documented as done.`;
+      }
+      if(e.action) line += ` Actions: ${e.action}.`;
+      flagLines.push(line);
+    } else if(e.esc==='Y'){
+      flagLines.push(`${at}: escalated as clinically indicated.` + (e.action ? ` Actions: ${e.action}.` : ''));
+    } else if(e.action){
+      flagLines.push(`${at}: ${e.action}.`);
+    }
+  });
+  return text + (flagLines.length ? ' ' + flagLines.join(' ') : '');
+}
 let drainEntryCount = 1;
 function addDrainEntry(){ drainEntryCount++; renderDeviceSections(); }
 function removeDrainEntry(){ if(drainEntryCount>1){ drainEntryCount--; renderDeviceSections(); } }
@@ -3289,6 +3431,37 @@ function renderDeviceSections(){
       if(t.ciwaScore){
         card.innerHTML += `<div class="hint" id="ciwa_total_display" style="font-weight:700;"></div>`;
       }
+      if(t.pcaChart){
+        const painOpts='<option value="">\u2014</option><option value="0">0 \u2014 None</option><option value="1">1 \u2014 Mild</option><option value="2">2 \u2014 Moderate</option><option value="3">3 \u2014 Severe</option>';
+        const sedOpts='<option value="">\u2014</option><option value="A">A \u2014 Alert</option><option value="V">V \u2014 Drowsy</option><option value="P">P \u2014 Response to pain</option><option value="U">U \u2014 Unresponsive</option>';
+        const nvOpts='<option value="">\u2014</option><option value="0">0 \u2014 None</option><option value="1">1 \u2014 Nausea only</option><option value="2">2 \u2014 1 episode of vomiting in last hour</option><option value="3">3 \u2014 &gt;1 episode of vomiting in last hour</option>';
+        let rows='';
+        for(let i=1;i<=pcaObsCount;i++){
+          rows += `<div class="devicecard card" style="margin-bottom:10px;">
+            <div class="hint" style="font-weight:700;">PCA observation ${i}</div>
+            <div class="row">
+              <div><label class="field">Time</label><input type="text" id="pca_obs_time_${i}" placeholder="e.g. 08:00"></div>
+              <div><label class="field">Pain at rest</label><select id="pca_obs_rest_${i}" onchange="updatePcaObsWarn(${i})">${painOpts}</select></div>
+              <div><label class="field">Pain on movement</label><select id="pca_obs_move_${i}" onchange="updatePcaObsWarn(${i})">${painOpts}</select></div>
+              <div><label class="field">Sedation</label><select id="pca_obs_sed_${i}" onchange="updatePcaObsWarn(${i})">${sedOpts}</select></div>
+              <div><label class="field">Nausea and vomiting</label><select id="pca_obs_nv_${i}">${nvOpts}</select></div>
+              <div><label class="field">Resp rate</label><input type="number" id="pca_obs_rr_${i}" oninput="updatePcaObsWarn(${i})" placeholder="/min"></div>
+            </div>
+            <div class="row">
+              <div><label class="field">Volume remaining in syringe (VTBI)</label><input type="text" id="pca_obs_vtbi_${i}" placeholder="e.g. 43ml"></div>
+              <div><label class="field">Amount given since last reading</label><input type="text" id="pca_obs_given_${i}" placeholder="e.g. 7"></div>
+              <div><label class="field">Cumulative opioid given</label><input type="text" id="pca_obs_cum_${i}" placeholder="e.g. 7"></div>
+              <div><label class="field">Escalated if needed?</label><select id="pca_obs_esc_${i}"><option value="">\u2014</option><option value="Y">Y</option><option value="N">N</option></select></div>
+            </div>
+            <input type="text" id="pca_obs_action_${i}" placeholder="actions taken (optional) e.g. handset removed, naloxone given" style="margin-top:6px;">
+            <div class="hint" id="pca_obs_warn_${i}" style="color:var(--danger); font-weight:600; margin-top:6px;"></div>
+          </div>`;
+        }
+        const removeBtn = pcaObsCount>1 ? `<button type="button" class="reword" style="padding:6px 12px; font-size:0.78rem;" onclick="removePcaObs()">\u2212 Remove last observation</button>` : '';
+        card.innerHTML += `<div class="hint" style="margin-top:8px; font-weight:600;">PCA observation chart (PF WR1464 v8) \u2014 hourly, then 4-hourly thereafter</div>
+          <div class="hint">Management of problems: RR \u226410 = obs every 30 min \u00b7 RR \u22648 = remove handset, call Acute Pain Team/1st on-call anaesthetist \u00b7 RR \u22646 = as above + naloxone + medical help \u00b7 Sedation U = remove handset, naloxone, medical help \u00b7 Pain moderate/severe = call Acute Pain Team/1st on-call anaesthetist. APT bleep 238 (WRH)/1266 (ALX); anaesthetist 700 (WRH)/1933 (ALX).</div>
+          ${rows}<div><button type="button" class="reword" style="padding:6px 12px; font-size:0.78rem;" onclick="addPcaObs()">+ Add observation</button>${removeBtn}</div>`;
+      }
       if(t.complicationsList){
         const list = t.complicationsList, prefix = t.complicationsPrefix;
         const condHtml = list.map((entry,idx)=>{
@@ -3312,7 +3485,24 @@ function renderDeviceSections(){
       }
       if(t.ngFeedingCheck){
         const phReasonHtml = NG_PH_REASONS.map((r,idx)=>`<div class="opt"><input type="checkbox" id="ng_phreason_${idx}"><label>${r}</label></div>`).join('');
-        card.innerHTML += `<div class="hint" style="margin-top:8px; font-weight:600;">Reason for pH testing (tick all that apply):</div>${phReasonHtml}<input type="text" id="ng_phreason_other" placeholder="other reason (specify)" style="margin-top:6px;">`;
+        card.innerHTML += `<div class="reveal" id="ngPhTestingBlock">
+          <label class="field">pH of aspirate</label><input type="number" id="ng_ph">
+          <div class="hint" style="margin-top:8px; font-weight:600;">Reason for pH testing (tick all that apply):</div>${phReasonHtml}<input type="text" id="ng_phreason_other" placeholder="other reason (specify)" style="margin-top:6px;">
+        </div>`;
+        card.innerHTML += `<div class="reveal" id="ngDecompressionBlock">
+          <div class="hint" style="margin-top:8px; font-weight:600;">Decompression assessment:</div>
+          <div class="row2">
+            <div><label class="field">Suction</label><select id="ng_suction"><option value="">\u2014</option><option value="Free drainage (gravity, no suction)">Free drainage (gravity)</option><option value="Low intermittent suction">Low intermittent suction</option><option value="Low continuous suction">Low continuous suction</option><option value="High intermittent suction">High intermittent suction</option></select></div>
+            <div><label class="field">Abdominal distension</label><select id="ng_distension"><option value="">\u2014</option><option value="Improved/reducing">Improved/reducing</option><option value="Unchanged">Unchanged</option><option value="Worsening">Worsening</option></select></div>
+          </div>
+          <div class="row2">
+            <div><label class="field">Bowel sounds</label><select id="ng_bowelsounds"><option value="">\u2014</option><option value="Present/normal">Present/normal</option><option value="Hypoactive">Hypoactive</option><option value="Absent">Absent</option><option value="Hyperactive">Hyperactive</option></select></div>
+            <div><label class="field">Tube patency</label><select id="ng_patency"><option value="">\u2014</option><option value="Patent, draining freely">Patent, draining freely</option><option value="Reduced drainage, checked for blockage">Reduced drainage, checked for blockage</option><option value="Blocked, flushed as per protocol">Blocked, flushed as per protocol</option></select></div>
+          </div>
+          <div class="row2">
+            <div><label class="field">Nausea</label><select id="ng_nausea"><option value="">\u2014</option><option value="Improved since decompression">Improved since decompression</option><option value="Ongoing">Ongoing</option><option value="N/A">N/A</option></select></div>
+          </div>
+        </div>`;
         card.innerHTML += `<div class="reveal" id="ngFeedingChecklist">
           <div class="hint" style="margin-top:8px; font-weight:600;">Enteral feeding checks (per NG Tube Management &amp; Enteral Feed Check Record):</div>
           <div class="row2">
@@ -3331,6 +3521,12 @@ function renderDeviceSections(){
             <div><label class="field">Feed check (correct feed, correct rate)</label><select id="ng_feedcheck"><option value="">\u2014</option><option value="Yes">Yes</option><option value="No">No</option><option value="N/A">N/A</option></select></div>
           </div>
         </div>`;
+      }
+      if(t.bloodTests){
+        const testHtml = BLOOD_TESTS.map((tn,idx)=>`<div class="opt"><input type="checkbox" id="bs_test_${idx}"><label>${tn}</label></div>`).join('');
+        card.innerHTML += `<div class="hint" style="margin-top:8px; font-weight:600;">Tests sent (tick all that apply):</div>${testHtml}<input type="text" id="bs_test_other" placeholder="other test (specify)" style="margin-top:6px;">
+          <label class="field" style="margin-top:8px;">Status</label>
+          <select id="bs_status"><option value="Sent to lab, results pending">Sent to lab, results pending</option><option value="Results reviewed, within acceptable range">Results reviewed, within acceptable range</option><option value="Results reviewed, abnormal \u2014 surgical SHO informed (see Blood results)">Results reviewed, abnormal \u2014 surgical SHO informed (see Blood results)</option></select>`;
       }
       if(t.metCall){
         const critHtml = MET_CRITERIA.map((entry,idx)=>{
@@ -3385,7 +3581,7 @@ function renderDeviceSections(){
     if(devId==='drain'){ for(let i=1;i<=drainEntryCount;i++) toggleOtherField('drain_fluid_'+i); }
     if(devId==='rsc'){ RSC_CONDITIONS.forEach((entry,idx)=>{ if(entry.i) toggleComplicationNested('rsc', idx); else toggleComplicationReaction('rsc', idx); }); }
     if(devId==='epidural'){ EPIDURAL_CONDITIONS.forEach((entry,idx)=>{ if(entry.i) toggleComplicationNested('epi_comp', idx); else toggleComplicationReaction('epi_comp', idx); }); }
-    if(devId==='pca'){ PCA_CONDITIONS.forEach((entry,idx)=>{ if(entry.i) toggleComplicationNested('pca_comp', idx); else toggleComplicationReaction('pca_comp', idx); }); }
+    if(devId==='pca'){ for(let i=1;i<=pcaObsCount;i++) updatePcaObsWarn(i); PCA_CONDITIONS.forEach((entry,idx)=>{ if(entry.i) toggleComplicationNested('pca_comp', idx); else toggleComplicationReaction('pca_comp', idx); }); }
     if(t && t.fields){ t.fields.forEach(f=>{ if(f.type==='select_other') toggleOtherField(f.id); }); }
   });
 }
