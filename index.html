@@ -1406,6 +1406,20 @@ function toggleRibReferralSlip(){
   const rev = document.getElementById('ribReferralSlipReveal');
   if(rev) rev.classList.toggle('show', val.startsWith('Step 3'));
 }
+function toggleNGFeedingChecklist(){
+  const isFeeding = getVal('ng_reason').startsWith('Enteral feeding');
+  const rev = document.getElementById('ngFeedingChecklist');
+  if(rev) rev.classList.toggle('show', isFeeding);
+  const modeSel = document.getElementById('ng_mode');
+  if(modeSel){
+    const current = modeSel.value;
+    const allOptions = [['free drainage','free drainage'],['clamped','clamped'],['on feed','on feed']];
+    const options = isFeeding ? allOptions.filter(([v])=>v!=='free drainage') : allOptions;
+    modeSel.innerHTML = options.map(([v,label])=>`<option value="${v}">${label}</option>`).join('');
+    if(isFeeding && current==='free drainage'){ modeSel.value = 'on feed'; }
+    else if(options.some(([v])=>v===current)){ modeSel.value = current; }
+  }
+}
 let woundEntryCount = 1;
 function addWoundEntry(){ woundEntryCount++; renderWoundEntries(); }
 function removeWoundEntry(){ if(woundEntryCount>1){ woundEntryCount--; renderWoundEntries(); } }
@@ -2223,6 +2237,17 @@ const PCA_CONDITIONS = [
   {c:'Inadequate analgesia despite appropriate PCA use', r:'Pain and PCA demand/delivery ratio reassessed, acute pain team contacted, background/bolus settings reviewed.'},
   {c:'Persistent nausea/vomiting despite antiemetics', r:'Antiemetic given/reviewed, acute pain team/anaesthetist informed if ongoing.'},
 ];
+const NG_PH_REASONS = [
+  'A \u2014 Routine check (\u226424hrs, or 4\u20136hrs if higher aspiration risk)',
+  'B \u2014 Starting a new bag of feed',
+  'C \u2014 Administration of medication',
+  'D \u2014 Patient complained of discomfort/feed reflux into throat or mouth',
+  'E \u2014 Evidence of coughing or shortness of breath whilst feeding',
+  'F \u2014 Patient vomited/violent retching/severe coughing bouts',
+  'G \u2014 Following endotracheal tube or tracheotomy suctioning',
+  'H \u2014 Visible portion of NG tube noticeably longer',
+  'I \u2014 Measurement on tube differs from that originally recorded',
+];
 const MET_CRITERIA = [
   {c:'Airway threatened/compromised', i:['Airway opening manoeuvre (head tilt/chin lift or jaw thrust)','Airway suction performed','Oropharyngeal/nasopharyngeal airway inserted','High-concentration O2 via reservoir mask (15L/min)','Anaesthetic/airway expert called']},
   {c:'Respiratory rate \u22645 or \u226536 breaths/min', i:['High-concentration oxygen given, target SpO2 94\u201398% (88\u201392% if at risk of hypercapnic failure)','NIV/CPAP considered','Bronchodilators given (if wheeze/bronchospasm)','Naloxone considered (if opioid-induced)','ABG obtained','Senior/anaesthetic review requested']},
@@ -2974,26 +2999,55 @@ const DEVICE_TEMPLATES = {
   },
   ngtube: {
     title:'NG tube',
+    ngFeedingCheck: true,
     fields:[
+      {id:'ng_reason', label:'Reason for insertion', type:'select_other', options:['Gastric decompression (bowel obstruction/ileus)','Enteral feeding (nutritional support)','Medication administration','Gastric content aspiration/sampling','Gastric lavage (overdose/toxic ingestion)']},
       {id:'ng_mode', label:'Mode', type:'select', options:['free drainage','clamped','on feed']},
       {id:'ng_aspirate', label:'Aspirate amount/colour', type:'text', placeholder:'e.g. 40ml bile-stained'},
       {id:'ng_ph', label:'pH of aspirate', type:'number'},
-      {id:'ng_length', label:'Length at nares (cm)', type:'text'},
+      {id:'ng_length', label:'Position of NG \u2014 cm at nostril (compare with insertion record)', type:'text'},
       {id:'ng_feedstart', label:'Feed started at (if on feed)', type:'text', placeholder:'e.g. 20:00'},
     ],
-    build:(f)=>{ const mode=f.ng_mode||'free drainage', asp=f.ng_aspirate||'[amount/colour]', len=f.ng_length||'[X]', ph=f.ng_ph, feedStart=f.ng_feedstart;
+    build:(f)=>{ const reason=f.ng_reason||'Gastric decompression (bowel obstruction/ileus)';
+      const mode=f.ng_mode||'free drainage', asp=f.ng_aspirate||'[amount/colour]', len=f.ng_length||'[X]', ph=f.ng_ph, feedStart=f.ng_feedstart;
+      const phReasons = NG_PH_REASONS.filter((r,idx)=>document.getElementById('ng_phreason_'+idx)?.checked);
+      const phReasonOther = getVal('ng_phreason_other');
+      if(phReasonOther) phReasons.push(phReasonOther);
       const feedStartTxt = (mode==='on feed' && feedStart) ? ` Feed started at ${feedStart}.` : '';
+      const phReasonTxt = phReasons.length ? ` Reason for pH testing: ${phReasons.join('; ')}.` : '';
+      let base;
       if(ph && parseFloat(ph)>5.5){
-        return pick([
-          `NG tube in situ, ${mode}. Aspirate ${asp}, pH ${ph} \u2014 above the safe threshold of 5.5, so gastric placement is NOT confirmed. Tube withheld from feeding/medication use; surgical SHO informed, placement to be confirmed by X-ray before further use.`,
-          `NG tube ${mode}, aspirate ${asp}. pH ${ph} does not confirm safe gastric placement (threshold \u22645.5); tube not used for feeding or medication, surgical SHO aware, X-ray requested to confirm position.`
+        base = pick([
+          `NG tube in situ (${reason.toLowerCase()}), ${mode}. Aspirate ${asp}, pH ${ph} \u2014 above the safe threshold of 5.5, so gastric placement is NOT confirmed.${phReasonTxt} Tube withheld from feeding/medication use; surgical SHO informed, placement to be confirmed by X-ray before further use.`,
+          `NG tube ${mode} (${reason.toLowerCase()}), aspirate ${asp}. pH ${ph} does not confirm safe gastric placement (threshold \u22645.5).${phReasonTxt} Tube not used for feeding or medication, surgical SHO aware, X-ray requested to confirm position.`
+        ]);
+      } else {
+        const phTxt = ph ? ` pH ${ph}, confirming safe gastric placement.` : '';
+        base = pick([
+          `NG tube in situ (${reason.toLowerCase()}), ${mode}. Aspirate ${asp}.${phTxt}${phReasonTxt} Position checked and confirmed prior to use, secured at ${len}cm at the nostril.${feedStartTxt}`,
+          `NG tube ${mode} (${reason.toLowerCase()}), aspirate ${asp}.${phTxt}${phReasonTxt} Position confirmed before use, secured ${len}cm at nostril.${feedStartTxt}`
         ]);
       }
-      const phTxt = ph ? ` pH ${ph}, confirming safe gastric placement.` : '';
-      return pick([
-        `NG tube in situ, ${mode}. Aspirate ${asp}.${phTxt} Position checked and confirmed prior to use, secured at ${len}cm at the nares.${feedStartTxt}`,
-        `NG tube ${mode}, aspirate ${asp}.${phTxt} Position confirmed before use, secured ${len}cm at nares.${feedStartTxt}`
-      ]); }
+
+      if(reason.startsWith('Enteral feeding')){
+        const yn = (id)=>document.getElementById(id)?.value;
+        const checks = [
+          ['NG tube still indicated', yn('ng_still_indicated')],
+          ['Tube fixation clean and intact', yn('ng_fixation')],
+          ['Nasal area checked for erosion', yn('ng_nasal_erosion')],
+          ['Patient observations stable', yn('ng_obs_stable')],
+          ['30\u201345\u00b0 semi-recumbent position maintained', yn('ng_position_maintained')],
+          ['NG tube flushed with sterile water', yn('ng_flushed')],
+          ['Feed check (correct feed, correct rate)', yn('ng_feedcheck')],
+        ].filter(([,v])=>v);
+        if(checks.length){
+          base += ' ' + checks.map(([label,v])=>`${label}: ${v}.`).join(' ');
+        }
+        const concerning = checks.some(([label,v])=> (label==='NG tube still indicated' && v==='No') || (label!=='NG tube still indicated' && label!=='Feed check (correct feed, correct rate)' && v==='No'));
+        if(concerning) base += ' Finding(s) noted above require action \u2014 surgical SHO informed.';
+      }
+      return base;
+    }
   },
   stoma: {
     title:'Stoma',
@@ -3210,7 +3264,8 @@ function renderDeviceSections(){
         if(t.ribPathway && f.id==='rib_step') extraAttr = ` onchange="toggleRibReferralSlip()"`;
         if(t.ribScoreCalc && (f.id==='rib_breaks' || f.id==='rib_sides' || f.id==='rib_age_band')) extraAttr = ` oninput="updateRibScore()" onchange="updateRibScore()"`;
         if(f.type==='select_other'){
-          return `<div><label class="field">${f.label}</label><select id="${f.id}" onchange="toggleOtherField('${f.id}')">${f.options.map(o=>`<option value="${o}">${o}</option>`).join('')}<option value="Other (specify)">Other (specify)</option></select><input type="text" id="${f.id}_other" placeholder="specify..." style="display:none; margin-top:4px;"></div>`;
+          const extraCall = (t.ngFeedingCheck && f.id==='ng_reason') ? '; toggleNGFeedingChecklist()' : '';
+          return `<div><label class="field">${f.label}</label><select id="${f.id}" onchange="toggleOtherField('${f.id}')${extraCall}">${f.options.map(o=>`<option value="${o}">${o}</option>`).join('')}<option value="Other (specify)">Other (specify)</option></select><input type="text" id="${f.id}_other" placeholder="specify..." style="display:none; margin-top:4px;"></div>`;
         }
         if(f.type==='select'){
           return `<div><label class="field">${f.label}</label><select id="${f.id}"${extraAttr}>${f.options.map(o=>`<option value="${o}">${o}</option>`).join('')}</select></div>`;
@@ -3254,6 +3309,28 @@ function renderDeviceSections(){
           </div>`;
         }).join('');
         card.innerHTML += `<div class="hint" style="margin-top:8px;">Any complications observed? (tick all that apply \u2014 each shows its recommended response immediately)</div>${condHtml}<input type="text" id="${prefix}_cond_other" placeholder="other observation (specify)" style="margin-top:6px;">`;
+      }
+      if(t.ngFeedingCheck){
+        const phReasonHtml = NG_PH_REASONS.map((r,idx)=>`<div class="opt"><input type="checkbox" id="ng_phreason_${idx}"><label>${r}</label></div>`).join('');
+        card.innerHTML += `<div class="hint" style="margin-top:8px; font-weight:600;">Reason for pH testing (tick all that apply):</div>${phReasonHtml}<input type="text" id="ng_phreason_other" placeholder="other reason (specify)" style="margin-top:6px;">`;
+        card.innerHTML += `<div class="reveal" id="ngFeedingChecklist">
+          <div class="hint" style="margin-top:8px; font-weight:600;">Enteral feeding checks (per NG Tube Management &amp; Enteral Feed Check Record):</div>
+          <div class="row2">
+            <div><label class="field">NG tube still indicated</label><select id="ng_still_indicated"><option value="">\u2014</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+            <div><label class="field">Tube fixation clean and intact</label><select id="ng_fixation"><option value="">\u2014</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+          </div>
+          <div class="row2">
+            <div><label class="field">Nasal area checked for erosion</label><select id="ng_nasal_erosion"><option value="">\u2014</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+            <div><label class="field">Patient observations stable</label><select id="ng_obs_stable"><option value="">\u2014</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+          </div>
+          <div class="row2">
+            <div><label class="field">30\u201345\u00b0 semi-recumbent position maintained</label><select id="ng_position_maintained"><option value="">\u2014</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+            <div><label class="field">NG tube flushed with sterile water</label><select id="ng_flushed"><option value="">\u2014</option><option value="Yes">Yes</option><option value="No">No</option><option value="N/A">N/A</option></select></div>
+          </div>
+          <div class="row2">
+            <div><label class="field">Feed check (correct feed, correct rate)</label><select id="ng_feedcheck"><option value="">\u2014</option><option value="Yes">Yes</option><option value="No">No</option><option value="N/A">N/A</option></select></div>
+          </div>
+        </div>`;
       }
       if(t.metCall){
         const critHtml = MET_CRITERIA.map((entry,idx)=>{
@@ -3303,6 +3380,7 @@ function renderDeviceSections(){
     if(devId==='stoma'){ toggleStomaBristolPopups(); }
     if(devId==='ciwa'){ updateCiwaScore(); }
     if(devId==='ribpathway'){ toggleRibPainEscalation(); toggleRibReferralSlip(); updateRibScore(); }
+    if(devId==='ngtube'){ toggleNGFeedingChecklist(); }
     if(devId==='metcall'){ MET_CRITERIA.forEach((entry,idx)=>toggleMetCriteria(idx)); }
     if(devId==='drain'){ for(let i=1;i<=drainEntryCount;i++) toggleOtherField('drain_fluid_'+i); }
     if(devId==='rsc'){ RSC_CONDITIONS.forEach((entry,idx)=>{ if(entry.i) toggleComplicationNested('rsc', idx); else toggleComplicationReaction('rsc', idx); }); }
