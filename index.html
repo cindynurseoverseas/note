@@ -114,29 +114,14 @@
     <div class="pillgroup" id="dxGroupAcute"></div>
     <div class="hint" style="margin-top:12px;">Colorectal / bowel</div>
     <div class="pillgroup" id="dxGroupColorectal"></div>
+    <div class="hint" style="margin-top:12px;">Thoracic trauma</div>
+    <div class="pillgroup" id="dxGroupThoracic"></div>
+    <div class="hint" style="margin-top:12px;">Abdominal / pelvic trauma</div>
+    <div class="pillgroup" id="dxGroupAbdoPelvic"></div>
     <div class="hint" style="margin-top:12px;">Trauma / orthopaedic</div>
     <div class="pillgroup" id="dxGroupTrauma"></div>
     <div class="hint" style="margin-top:12px;">Underlying/comorbid conditions</div>
     <div class="pillgroup" id="dxGroupComorbid"></div>
-    <div class="reveal" id="dmInsulinReveal" style="margin-top:8px;">
-      <label class="field">Using insulin?</label>
-      <select id="dm_insulin" onchange="updateDMInsulinHint(); toggleDMBM3am();">
-        <option value="No">No</option>
-        <option value="Yes">Yes</option>
-      </select>
-    </div>
-    <div class="reveal" id="dmBMChartReveal" style="margin-top:8px;">
-      <div class="hint">BM (blood glucose) monitoring</div>
-      <div class="row2" id="dmBM3amWrap" style="display:none;"><div><label class="field">3am (insulin patients)</label><input type="text" id="dm_bm_3am" placeholder="e.g. 6.4mmol/L"></div></div>
-      <div class="row2">
-        <div><label class="field">Pre-breakfast</label><input type="text" id="dm_bm_breakfast" placeholder="e.g. 7.1mmol/L"></div>
-        <div><label class="field">Pre-lunch</label><input type="text" id="dm_bm_lunch" placeholder="e.g. 6.8mmol/L"></div>
-      </div>
-      <div class="row2">
-        <div><label class="field">Pre-tea</label><input type="text" id="dm_bm_tea" placeholder="e.g. 7.5mmol/L"></div>
-        <div><label class="field">Pre-bedtime</label><input type="text" id="dm_bm_bedtime" placeholder="e.g. 8.0mmol/L"></div>
-      </div>
-    </div>
   </div>
 
   <div class="grid-top">
@@ -150,6 +135,8 @@
       <div class="pillgroup" id="procGroupHernia"></div>
       <div class="hint" style="margin-top:12px;">Emergency general surgery</div>
       <div class="pillgroup" id="procGroupEmergency"></div>
+      <div class="hint" style="margin-top:12px;">Thoracic / chest</div>
+      <div class="pillgroup" id="procGroupThoracic"></div>
       <div class="hint" style="margin-top:12px;">Trauma / Orthopaedic</div>
       <div class="pillgroup" id="procGroupOrtho"></div>
       <div class="opt" style="margin-top:10px;"><input type="checkbox" id="postop_chk" onchange="toggleShow('postop_chk','postop_reveal'); applyPostOpDefaults();"><label>Post-operative patient</label></div>
@@ -195,7 +182,6 @@
     <div class="pillgroup" id="devGroupWounds"></div>
     <div class="hint" style="margin-top:12px;">General care</div>
     <div class="hint" id="postOpVteHint" style="display:none; color:var(--primary); font-weight:600; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius); margin-bottom:6px;">Post-operative patient — remember to check VTE mechanical prophylaxis (Flowtron/TEDs) is prescribed and in use.</div>
-    <div class="hint" id="dmInsulinHint" style="display:none; color:var(--primary); font-weight:600; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius); margin-bottom:6px;">Patient has diabetes and uses insulin — document it here. <button type="button" class="reword" style="padding:4px 10px; font-size:0.72rem; margin-left:6px;" onclick="document.querySelector('#dev_insulin input').click()">+ Add insulin</button></div>
     <div class="pillgroup" id="devGroupGeneral"></div>
     <div class="hint" style="margin-top:12px;">Investigations / samples</div>
     <div class="pillgroup" id="devGroupInvest"></div>
@@ -352,20 +338,7 @@
       <label><input type="checkbox" id="spo2Scale2Chk" onchange="renderNEWS2()"> Use SpO2 Scale 2 (confirmed chronic hypercapnic resp failure, e.g. COPD, target SpO2 88&ndash;92%)</label>
     </div>
 
-    <div class="reveal" id="bmLowPanel">
-      <div class="hint" style="color:var(--danger); font-weight:700;">BM &lt;4 mmol/L — Hypoglycaemia pathway:</div>
-      <div class="opt"><input type="checkbox" id="hypo_carb"><label>Quick-acting carbohydrate given (e.g. Glucojuice/Lucozade/GlucoGel) or IV 10% glucose/IM Glucagon if severe/NBM</label></div>
-      <div class="opt"><input type="checkbox" id="hypo_recheck"><label>BM rechecked within 10–15 minutes</label></div>
-      <div class="opt"><input type="checkbox" id="hypo_longacting"><label>Once BM &gt;4: longer-acting carbohydrate given (e.g. toast, biscuits)</label></div>
-      <div class="opt"><input type="checkbox" id="hypo_medteam"><label>Surgical SHO informed</label></div>
-    </div>
-    <div class="reveal" id="bmHighPanel">
-      <div class="hint" style="color:var(--danger); font-weight:700;">BM &gt;15 mmol/L — check ketones:</div>
-      <div class="opt"><input type="checkbox" id="hyper_ketone_chk"><label>Blood/urine ketones checked</label></div>
-      <input type="text" id="hyper_ketone_value" placeholder="ketone result, e.g. 0.3mmol/L or negative">
-      <div class="opt"><input type="checkbox" id="hyper_medteam"><label>Surgical SHO informed</label></div>
-      <div class="opt"><input type="checkbox" id="hyper_sliding"><label>Sliding scale/insulin reviewed</label></div>
-    </div>
+    <div id="bmpMainHolder"></div>
 
     <div class="reveal" id="sepsisSixPanel">
       <div style="color:var(--danger); font-weight:800; font-size:0.85rem; letter-spacing:0.03em; text-transform:uppercase; margin-bottom:8px;">⚠ NEWS2/observations suggest possible deterioration or query sepsis — Sepsis Six (3 in / 3 out)</div>
@@ -407,10 +380,23 @@
       </div>
       <div class="reveal" id="sgas_gasBlock">
         <div class="hint" id="sgas_gasInterp" style="font-weight:600;"></div>
-        <div class="opt"><input type="checkbox" id="sgas_gas_repeat"><label>Repeat gas arranged</label></div>
+        <div class="opt"><input type="checkbox" id="sgas_gas_repeat" onchange="updateGasInterp('sgas')"><label>Repeat gas arranged</label></div>
         <div class="opt"><input type="checkbox" id="sgas_gas_medteam"><label>Surgical SHO informed</label></div>
         <div class="opt"><input type="checkbox" id="sgas_gas_outreach"><label>Outreach/senior review requested</label></div>
         <div class="opt"><input type="checkbox" id="sgas_gas_pathway"><label>Relevant pathway actioned (e.g. Sepsis Six / Hyperkalaemia pathway, as appropriate)</label></div>
+        <div class="reveal" id="sgas2_gasBlock" style="margin-left:18px; margin-top:6px; border-left:3px solid var(--primary); padding-left:10px;">
+          <div class="hint" style="font-weight:700;">Repeat gas (second slot)</div>
+          <div class="row2">
+            <div><label class="field">ABG / VBG</label><select id="sgas2_gas" onchange="updateGasInterp('sgas')"><option value="">Same as first</option><option value="ABG">ABG</option><option value="VBG">VBG</option></select></div>
+            <div><label class="field">Time</label><input type="text" id="sgas2_time" placeholder="e.g. 16:30"></div>
+            <div><label class="field">pH</label><input type="text" id="sgas2_ph" oninput="updateGasInterp('sgas')" placeholder="e.g. 7.35"></div>
+            <div><label class="field">pCO2 (kPa)</label><input type="text" id="sgas2_pco2" oninput="updateGasInterp('sgas')" placeholder="e.g. 5.2"></div>
+            <div><label class="field">HCO3 (mmol/L)</label><input type="text" id="sgas2_hco3" oninput="updateGasInterp('sgas')" placeholder="e.g. 24"></div>
+            <div><label class="field">Lactate (mmol/L)</label><input type="text" id="sgas2_lactate" oninput="updateGasInterp('sgas')" placeholder="e.g. 1.2"></div>
+            <div><label class="field">K+ (mmol/L)</label><input type="text" id="sgas2_k" oninput="updateGasInterp('sgas')" placeholder="e.g. 4.5"></div>
+          </div>
+          <div class="hint" id="sgas2_gasInterp" style="font-weight:600;"></div>
+        </div>
       </div>
       <div class="opt"><input type="checkbox" id="sepsisManualChk" onchange="renderNEWS2()"><label>Suspected sepsis/infection (show this checklist even if NEWS2 is currently low)</label></div>
     </div>
@@ -480,12 +466,14 @@
         <div class="opt"><input type="checkbox" class="optD" data-key="D_gcs" checked><label>Alert, GCS (uses GCS fields)</label></div>
         <div class="opt"><input type="checkbox" class="optD" data-key="D_pain" checked><label>Pain (uses Pain field)</label></div>
         <div class="opt"><input type="checkbox" class="optD" data-key="D_bm" checked><label>Blood glucose (uses BM field)</label></div>
-        <div class="opt"><input type="checkbox" id="D_baseline_chk" onchange="toggleShow('D_baseline_chk','D_baseline_reveal'); renderNEWS2();"><label>GCS below 15 is patient's known baseline (e.g. dementia) — not a new change</label></div>
+        <div class="opt"><input type="checkbox" id="D_baseline_chk" onchange="toggleShow('D_baseline_chk','D_baseline_reveal'); renderNEWS2(); updateNeuroHint();"><label>GCS below 15 is patient's known baseline (e.g. dementia) — not a new change</label></div>
         <div class="reveal" id="D_baseline_reveal"><input type="text" id="D_baseline_text" placeholder="condition (optional) — defaults to 'known dementia/cognitive impairment'"></div>
-        <div class="opt"><input type="checkbox" id="D_other_chk" onchange="toggleShow('D_other_chk','D_other_reveal'); renderNEWS2();"><label>New confusion / neuro concern (acute change)</label></div>
+        <div class="opt"><input type="checkbox" id="D_other_chk" onchange="toggleShow('D_other_chk','D_other_reveal'); renderNEWS2(); updateNeuroHint();"><label>New confusion / neuro concern (acute change)</label></div>
         <div class="reveal" id="D_other_reveal"><input type="text" id="D_other_text" placeholder="Describe neuro/confusion finding"></div>
 
-        <div class="hint" style="margin-top:10px;">Pupils</div>
+        <div class="hint" id="D_neuro_hint" style="display:none; color:var(--primary); font-weight:600; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius); margin-top:10px;">Consciousness has changed - consider checking pupils and muscle power below.</div>
+        <div class="opt" style="margin-top:10px;"><input type="checkbox" id="D_pupils_chk" onchange="toggleShow('D_pupils_chk','D_pupils_reveal')"><label>Pupils assessed (optional - e.g. when consciousness changes)</label></div>
+        <div class="reveal" id="D_pupils_reveal">
         <div class="row2">
           <div><label class="field">Size L (mm)</label><select id="D_pupil_L_size"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
           <div><label class="field">Size R (mm)</label><select id="D_pupil_R_size"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
@@ -495,7 +483,10 @@
           <div><label class="field">Reactivity R</label><select id="D_pupil_R_react"><option value="Brisk">Brisk</option><option value="Sluggish">Sluggish</option><option value="Fixed">Fixed/non-reactive</option></select></div>
         </div>
 
-        <div class="hint" style="margin-top:10px;">Muscle power (MRC scale, 5 = normal)</div>
+        </div>
+
+        <div class="opt" style="margin-top:10px;"><input type="checkbox" id="D_power_chk" onchange="toggleShow('D_power_chk','D_power_reveal')"><label>Muscle power assessed (optional - MRC scale, 5 = normal)</label></div>
+        <div class="reveal" id="D_power_reveal">
         <div class="row">
           <div><label class="field">Left arm</label><select id="D_power_LA">
             <option value="0">0 - No movement</option><option value="1">1 - Flicker only</option><option value="2">2 - Gravity eliminated</option><option value="3">3 - Against gravity</option><option value="4">4 - Against resistance</option><option value="5" selected>5 - Normal power</option>
@@ -509,6 +500,7 @@
           <div><label class="field">Right leg</label><select id="D_power_RL">
             <option value="0">0 - No movement</option><option value="1">1 - Flicker only</option><option value="2">2 - Gravity eliminated</option><option value="3">3 - Against gravity</option><option value="4">4 - Against resistance</option><option value="5" selected>5 - Normal power</option>
           </select></div>
+        </div>
         </div>
       </fieldset>
 
@@ -574,14 +566,15 @@
       <option value="bedbound">Bed-bound / not mobilising</option>
     </select>
 
-    <div class="opt" style="margin-top:10px;"><input type="checkbox" id="mob_extra_chk" onchange="toggleShow('mob_extra_chk','mob_extra_reveal')"><label>Add extra interventions (optional — e.g. limb exercises for bed-bound patients)</label></div>
-    <div class="reveal" id="mob_extra_reveal">
+    <div class="hint" style="margin-top:10px; font-weight:600;">Mobility interventions (optional - tick only what was done)</div>
+    <div id="mob_extra_list">
       <div class="opt"><input type="checkbox" id="mob_passive"><label>Passive limb exercises carried out</label></div>
       <div class="opt"><input type="checkbox" id="mob_active"><label>Active limb exercises encouraged</label></div>
       <div class="opt"><input type="checkbox" id="mob_reposition"><label>Regular repositioning/turns carried out</label></div>
       <div class="opt"><input type="checkbox" id="mob_physio"><label>Physiotherapy input/review</label></div>
       <div class="opt"><input type="checkbox" id="mob_chestphysio"><label>Chest physiotherapy given</label></div>
       <div class="opt"><input type="checkbox" id="mob_splints"><label>Splints/positioning aids in use</label></div>
+      <div class="opt"><input type="checkbox" id="mob_pressure"><label>Pressure areas checked during repositioning/transfer</label></div>
       <input type="text" id="mob_extra_other" placeholder="other intervention (optional)" style="margin-top:6px;">
     </div>
   </div>
@@ -1029,14 +1022,49 @@ const DIAGNOSES_COLORECTAL = [
   {id:'bowel_fistula', label:'Enterocutaneous/anorectal fistula'},
   {id:'rectal_prolapse', label:'Rectal prolapse'},
 ];
-const DIAGNOSES_TRAUMA = [
+const DIAGNOSES_THORACIC = [
+  {id:'pneumothorax', label:'Pneumothorax'},
+  {id:'pneumothorax_traumatic', label:'Traumatic pneumothorax'},
+  {id:'tension_pneumothorax', label:'Tension pneumothorax'},
+  {id:'open_pneumothorax', label:'Open pneumothorax (sucking chest wound)'},
+  {id:'haemothorax', label:'Haemothorax'},
+  {id:'haemopneumothorax', label:'Haemopneumothorax'},
   {id:'rib_fx', label:'Rib fractures'},
+  {id:'flail_chest', label:'Flail chest'},
+  {id:'sternal_fx', label:'Sternal fracture'},
+  {id:'pulm_contusion', label:'Pulmonary contusion'},
+  {id:'surgical_emphysema', label:'Surgical (subcutaneous) emphysema'},
+  {id:'tracheobronchial_injury', label:'Tracheobronchial injury'},
+  {id:'cardiac_contusion', label:'Blunt cardiac injury / cardiac tamponade'},
+  {id:'diaphragm_injury', label:'Diaphragmatic injury/rupture'},
+];
+const DIAGNOSES_ABDOPELVIC = [
+  {id:'splenic_injury', label:'Splenic injury/rupture'},
+  {id:'liver_injury', label:'Liver laceration/injury'},
+  {id:'renal_injury', label:'Renal injury'},
+  {id:'pancreatic_injury', label:'Pancreatic injury'},
+  {id:'bowel_mesenteric_injury', label:'Bowel/mesenteric injury'},
+  {id:'bladder_urethral_injury', label:'Bladder/urethral injury'},
+  {id:'retroperitoneal_haematoma', label:'Retroperitoneal haematoma'},
+  {id:'pelvic_fx', label:'Pelvic fracture'},
+  {id:'penetrating_abdo', label:'Penetrating abdominal injury (stab/gunshot)'},
+];
+const DIAGNOSES_TRAUMA = [
+  {id:'polytrauma', label:'Polytrauma'},
   {id:'open_fracture', label:'Open fracture'},
   {id:'closed_fracture', label:'Closed fracture'},
   {id:'nof_fracture', label:'Neck of femur fracture'},
+  {id:'femoral_shaft_fx', label:'Femoral shaft fracture'},
   {id:'ankle_fracture', label:'Ankle fracture'},
   {id:'wrist_fracture', label:'Wrist/distal radius fracture'},
   {id:'tib_fib_fracture', label:'Tibia/fibula fracture'},
+  {id:'humerus_fx', label:'Humerus fracture'},
+  {id:'clavicle_fx', label:'Clavicle fracture'},
+  {id:'spinal_fx', label:'Spinal/vertebral fracture'},
+  {id:'compartment_syndrome', label:'Compartment syndrome'},
+  {id:'crush_injury', label:'Crush injury'},
+  {id:'traumatic_amputation', label:'Traumatic amputation'},
+  {id:'penetrating_injury', label:'Penetrating injury (stab/gunshot wound)'},
   {id:'septic_joint', label:'Septic arthritis / joint infection'},
   {id:'traumatic_wound', label:'Traumatic wound/laceration'},
 ];
@@ -1048,7 +1076,7 @@ const DIAGNOSES_COMORBID = [
   {id:'copd', label:'COPD'},
   {id:'ihd', label:'Ischaemic heart disease (IHD)'},
 ];
-const DIAGNOSES = DIAGNOSES_ACUTE.concat(DIAGNOSES_COLORECTAL, DIAGNOSES_TRAUMA, DIAGNOSES_COMORBID);
+const DIAGNOSES = DIAGNOSES_ACUTE.concat(DIAGNOSES_COLORECTAL, DIAGNOSES_THORACIC, DIAGNOSES_ABDOPELVIC, DIAGNOSES_TRAUMA, DIAGNOSES_COMORBID);
 
 const PROCEDURES_COLORECTAL = [
   {id:'hartmanns', label:"Hartmann's procedure"},
@@ -1090,6 +1118,16 @@ const PROCEDURES_EMERGENCY = [
   {id:'abscess_drainage', label:'Drainage of abscess'},
   {id:'pilonidal_excision', label:'Pilonidal sinus excision'},
   {id:'jejunostomy', label:'Jejunostomy'},
+  {id:'fasciotomy', label:'Fasciotomy'},
+  {id:'ir_embolisation', label:'IR angio-embolisation'},
+  {id:'ir_drain', label:'Image-guided (IR) drain insertion, e.g. pigtail'},
+];
+const PROCEDURES_THORACIC = [
+  {id:'chest_drain_insertion', label:'Chest drain insertion (intercostal drain)'},
+  {id:'needle_decompression', label:'Needle decompression / finger thoracostomy'},
+  {id:'thoracotomy', label:'Thoracotomy'},
+  {id:'vats', label:'VATS (video-assisted thoracoscopic surgery)'},
+  {id:'rib_fixation', label:'Rib fixation (SSRF)'},
 ];
 const PROCEDURES_ORTHO = [
   {id:'orif', label:'ORIF (Open Reduction Internal Fixation)'},
@@ -1098,7 +1136,7 @@ const PROCEDURES_ORTHO = [
   {id:'closed_reduction', label:'Closed reduction and casting'},
   {id:'hemiarthroplasty', label:'Hemiarthroplasty'},
 ];
-const PROCEDURES = PROCEDURES_COLORECTAL.concat(PROCEDURES_UPPERGI, PROCEDURES_HERNIA, PROCEDURES_EMERGENCY, PROCEDURES_ORTHO);
+const PROCEDURES = PROCEDURES_COLORECTAL.concat(PROCEDURES_UPPERGI, PROCEDURES_HERNIA, PROCEDURES_EMERGENCY, PROCEDURES_THORACIC, PROCEDURES_ORTHO);
 
 const DEVICES_VASCULAR = [
   {id:'cvc', label:'CVC'},
@@ -1128,7 +1166,7 @@ const DEVICES_WOUNDS = [
 const DEVICES_GENERAL = [
   {id:'vte_mech', label:'VTE mechanical prophylaxis (Flowtron/TEDs)'},
   {id:'eol_care', label:'End of life / Individualised Care Plan'},
-  {id:'insulin', label:'Insulin (subcutaneous)'},
+  {id:'bmchart', label:'Insulin / BM monitoring'},
 ];
 
 const DEVICES_INVEST = [
@@ -1200,12 +1238,15 @@ function buildPills(container, list, prefix, onchangeExtra){
 }
 buildPills('dxGroupAcute', DIAGNOSES_ACUTE, 'dx');
 buildPills('dxGroupColorectal', DIAGNOSES_COLORECTAL, 'dx');
+buildPills('dxGroupThoracic', DIAGNOSES_THORACIC, 'dx');
+buildPills('dxGroupAbdoPelvic', DIAGNOSES_ABDOPELVIC, 'dx');
 buildPills('dxGroupTrauma', DIAGNOSES_TRAUMA, 'dx');
 buildPills('dxGroupComorbid', DIAGNOSES_COMORBID, 'dx', toggleDMInsulin);
 buildPills('procGroupColorectal', PROCEDURES_COLORECTAL, 'proc');
 buildPills('procGroupUpperGI', PROCEDURES_UPPERGI, 'proc');
 buildPills('procGroupHernia', PROCEDURES_HERNIA, 'proc');
 buildPills('procGroupEmergency', PROCEDURES_EMERGENCY, 'proc');
+buildPills('procGroupThoracic', PROCEDURES_THORACIC, 'proc');
 buildPills('procGroupOrtho', PROCEDURES_ORTHO, 'proc');
 buildPills('devGroupVascular', DEVICES_VASCULAR, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupFeeding', DEVICES_FEEDING, 'dev', renderDeviceSectionsSafe);
@@ -1216,7 +1257,7 @@ buildPills('devGroupAnalgesia', DEVICES_ANALGESIA, 'dev', renderDeviceSectionsSa
 buildPills('devGroupPathway', DEVICES_PATHWAY, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupCardiac', DEVICES_CARDIAC, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupSymptoms', DEVICES_SYMPTOMS, 'dev', renderDeviceSectionsSafe);
-function renderDeviceSectionsSafe(){ renderDeviceSections(); updateTPNRefeedingHint(); updatePostOpHints(); updateDMInsulinHint(); }
+function renderDeviceSectionsSafe(){ renderDeviceSections(); updateTPNRefeedingHint(); updatePostOpHints(); syncBMDevice(); }
 function updateTPNRefeedingHint(){
   const tpnTicked = document.querySelector('#dev_tpn input')?.checked;
   const hint = document.getElementById('tpnRefeedingHint');
@@ -1244,10 +1285,43 @@ function setShift(s){
 window.currentShift='day';
 window.patientLocation='ward';
 function setPatientLocation(loc){
+  const prev = window.patientLocation;
   document.querySelectorAll('.shiftbtn[data-location]').forEach(b=>b.classList.toggle('active', b.dataset.location===loc));
   window.patientLocation = loc;
   document.getElementById('highCareHint').style.display = loc==='highcare' ? 'block' : 'none';
   if(loc==='highcare') applyHighCareSlots();
+  else if(prev==='highcare') dropEmptyHighCareSlots();
+}
+function newsEntrySlotHasData(i){
+  const container = document.getElementById('newsEntriesContainer');
+  let has = false;
+  container.querySelectorAll('input, select').forEach(el=>{
+    if(!el.id.endsWith('_'+i) || el.id==='newsEntry_time_'+i) return;
+    if(el.type==='checkbox'){ if(el.checked) has = true; }
+    else if(el.tagName==='SELECT'){ if(el.value && el.value!=='room air') has = true; }
+    else if(el.value.trim()!=='') has = true;
+  });
+  return has;
+}
+function dropEmptyHighCareSlots(){
+  const filled = [];
+  for(let i=1;i<=newsEntryCount;i++){ if(newsEntrySlotHasData(i)) filled.push(i); }
+  if(filled.length===newsEntryCount) return;
+  const snap = {};
+  document.getElementById('newsEntriesContainer').querySelectorAll('input, select').forEach(el=>{
+    const m = el.id.match(/^(.*)_(\d+)$/);
+    if(!m) return;
+    const pos = filled.indexOf(parseInt(m[2]));
+    if(pos<0) return;
+    snap[m[1]+'_'+(pos+1)] = el.type==='checkbox' ? el.checked : el.value;
+  });
+  newsEntryCount = filled.length;
+  renderNewsEntries();
+  Object.keys(snap).forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){ if(el.type==='checkbox') el.checked = snap[id]; else el.value = snap[id]; }
+  });
+  for(let i=1;i<=newsEntryCount;i++){ updateNewsEntryScore(i); toggleHFNCFieldsEntry(i); }
 }
 function applyHighCareSlots(){
   const times = window.currentShift==='day' ? ['08:00','10:00','12:00','14:00','16:00','18:00'] : ['20:00','22:00','00:00','02:00','04:00','06:00'];
@@ -1274,26 +1348,34 @@ function uncheckPeers(el, ...peerIds){
 document.getElementById('B_rib_chk').addEventListener('change', e=>{
   document.getElementById('B_rib_reveal').style.display = e.target.checked ? 'grid' : 'none';
 });
-function toggleDMInsulin(){
-  const dmPill = document.querySelector('#dx_dm input');
-  const dmTicked = dmPill && dmPill.checked;
-  const rev = document.getElementById('dmInsulinReveal');
-  if(rev) rev.classList.toggle('show', dmTicked);
-  const bmRev = document.getElementById('dmBMChartReveal');
-  if(bmRev) bmRev.classList.toggle('show', dmTicked);
-  updateDMInsulinHint();
-}
+function toggleDMInsulin(){ syncBMDevice(); refreshAllBMProtocols(); }
 function toggleDMBM3am(){
-  const wrap = document.getElementById('dmBM3amWrap');
-  if(wrap) wrap.style.display = getVal('dm_insulin')==='Yes' ? '' : 'none';
+  const wrap = document.getElementById('dmBM3amWrap'), hint = document.getElementById('dmBM3amHint');
+  const bed = bmpValue('bedtime');
+  const lowBed = bed!==null && bed<=7.0;
+  if(wrap) wrap.style.display = (getVal('dm_insulin')==='Yes' || lowBed) ? '' : 'none';
+  if(hint) hint.style.display = lowBed ? 'block' : 'none';
 }
-function updateDMInsulinHint(){
-  const dmPill = document.querySelector('#dx_dm input');
-  const dmTicked = dmPill && dmPill.checked;
-  const insulinYes = getVal('dm_insulin')==='Yes';
-  const hint = document.getElementById('dmInsulinHint');
-  const insulinTicked = document.querySelector('#dev_insulin input')?.checked;
-  if(hint) hint.style.display = (dmTicked && insulinYes && !insulinTicked) ? 'block' : 'none';
+function toggleBMInsulin(){
+  const on = getVal('dm_insulin')==='Yes';
+  ['insulin_regimen','insulin_type','insulin_dose','insulin_given','insulin_withhold_reason'].forEach(id=>{
+    const el=document.getElementById(id), box = el && el.parentElement;
+    if(box) box.style.display = on ? '' : 'none';
+  });
+  toggleDMBM3am();
+}
+function bmNeeded(){ return bmpIsDM() || !!document.querySelector('#dev_tpn input')?.checked; }
+function setBMDevice(v){
+  const el=document.querySelector('#dev_bmchart input'); if(!el) return;
+  window.bmProg=true; el.checked=v; el.dispatchEvent(new Event('change')); window.bmProg=false;
+}
+function syncBMDevice(){
+  if(window.bmProg) return;
+  const el=document.querySelector('#dev_bmchart input'); if(!el) return;
+  if(window.bmPrev===true && el.checked===false) window.bmManualOff = true;
+  if(!bmNeeded()){ window.bmManualOff = false; }
+  else if(!el.checked && !window.bmManualOff){ setBMDevice(true); }
+  window.bmPrev = el.checked;
 }
 function applyPostOpDefaults(){
   const isPostOp = document.getElementById('postop_chk').checked;
@@ -1706,20 +1788,206 @@ function renderNewsEntries(){
   if(removeBtn) removeBtn.style.display = newsEntryCount>0 ? 'inline-block' : 'none';
 }
 
-function renderBMCheck(){
-  const bm = getVal('v_bm');
-  const lowPanel = document.getElementById('bmLowPanel');
-  const highPanel = document.getElementById('bmHighPanel');
-  if(bm===''){ lowPanel.style.display='none'; highPanel.style.display='none'; return; }
-  const v = parseFloat(bm);
-  lowPanel.style.display = v<4 ? 'block' : 'none';
-  highPanel.style.display = v>15 ? 'block' : 'none';
+const BMP_KEYS_DM = ['3am','breakfast','lunch','tea','bedtime','other'];
+const BMP_LABELS = {main:'BM (observations)', '3am':'3am', breakfast:'Pre-breakfast', lunch:'Pre-lunch', tea:'Pre-tea', bedtime:'Pre-bedtime', other:'Other'};
+const BMP_HYPO = {
+  mild:{label:'mild (conscious, orientated and able to swallow)', steps:[
+    ['Hypo box obtained, hands washed and CBG confirmed', false],
+    ['Quick-acting glucose given: 5 glucose tablets, or 2x80ml orange juice (orally or via enteral tube), or 1.5\u20132 tubes glucose gel (45\u201360ml Fortijuice if citrus allergy)', false],
+    ['IV insulin stopped whilst hypo (if running)', false],
+    ['CBG repeated after 15 minutes (step repeated up to 3 times if still <4mmol/L)', false],
+    ['Still <4mmol/L after 3 treatments \u2014 doctor contacted', false],
+    ['IV access established and 100ml of 20% glucose or 200ml of 10% glucose over 15 mins given, or Glucagon 1mg IM given (40g carbohydrate after glucagon)', true],
+    ['Once BG >4mmol/L: 20g carbohydrate given to replenish glycogen stores (2 digestives, 1 slice of toast, 250ml milk or meal if due) or 10% glucose IV at 100ml/hr', false]]},
+  moderate:{label:'moderate (conscious but confused/disorientated or aggressive, able to swallow)', steps:[
+    ['Hypo box obtained, hands washed and CBG confirmed', false],
+    ['Cooperative: 5 glucose tablets or 2x80ml orange juice given (orally or enteral; 45\u201360ml Fortijuice if citrus allergy)', false],
+    ['Uncooperative but able to swallow: 1.5\u20132 tubes glucose gel given', false],
+    ['Glucagon 1mg IM given (once only)', true],
+    ['IV insulin stopped whilst hypo (if running)', false],
+    ['CBG repeated after 15 minutes (step repeated up to 3 times), or doctor contacted to establish IV access', false],
+    ['IV 100ml of 20% glucose (400ml/h) or 200ml of 10% glucose (800ml/h) given', true],
+    ['Still <4mmol/L after 3 treatments: 100ml of 20% glucose over 15 mins or Glucagon 1mg IM (40g carbohydrate after glucagon)', true],
+    ['Once BG >4mmol/L: 20g carbohydrate given (2 digestives, 1 slice of toast, 250ml milk or meal if due) or 10% glucose IV at 100ml/hr', false]]},
+  severe:{label:'severe (unconscious or nil by mouth)', steps:[
+    ['ABCDE checked', false],
+    ['IV insulin stopped whilst hypo (if running)', false],
+    ['2222 called and hypo box obtained', false],
+    ['IV access established and 100ml of 20% glucose or 200ml of 10% glucose over 15 mins given', true],
+    ['No immediate IV access: Glucagon 1mg IM given (once only)', true],
+    ['CBG repeated after 10\u201315 minutes (step repeated until >4mmol/L)', false],
+    ['Once >4.0mmol/L: 20g carbohydrate given (40g after glucagon), or if NBM 10% glucose at 100ml/h until reviewed by a doctor', false]]}
+};
+const BMP_COMMON = [
+  'CBG monitored every 15 minutes until one reading >7mmol/L',
+  'Regular 4\u20136 hourly CBG monitoring continued for the next 24 hours',
+  'Doctor/surgical SHO informed',
+  'Insulin not omitted \u2014 dose reviewed by prescriber (consider 20% reduction)',
+  'Diabetes Specialist Nurses referral (recurrent hypoglycaemia)',
+  'Datix incident form completed (required if IV or IM treatment given)'
+];
+const BMP_NODM = [
+  'Venous sample (blood gas analyser) confirmed hypoglycaemia (<3.3mmol/L without diabetes)',
+  'Escalated to a senior doctor (registrar/consultant), Endocrinology referral considered'
+];
+const BMP_HYPER = [
+  'Ketones checked (blood/urine)',
+  'Surgical SHO/prescriber informed \u2014 insulin dose reviewed',
+  'DKA guideline WAHT-END-001 followed (ketones raised/unwell)',
+  'Insulin initiation guideline WAHT-END-006 followed (if insulin being started)',
+  'Diabetes Specialist Nurse referral',
+  'Repeat CBG arranged'
+];
+function bmpEsc(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function bmpSrcId(key){ return key==='main' ? 'v_bm' : 'dm_bm_'+key; }
+function bmpLabel(key){ if(key==='other'){ const w=getVal('dm_bm_other_when'); return w ? `Other (${w})` : 'Other'; } return BMP_LABELS[key]; }
+function bmpValue(key){
+  const raw = getVal(bmpSrcId(key));
+  if(raw==='') return null;
+  if(/^lo\b/i.test(raw)) return 1;
+  if(/^hi\b/i.test(raw)) return 40;
+  const v = parseFloat(raw);
+  return isNaN(v) ? null : v;
+}
+function bmpIsDM(){ return !!document.querySelector('#dx_dm input')?.checked; }
+function bmpHi(){ return 15; }
+function bmpActive(key){ return key==='main' ? true : !!document.querySelector('#dev_bmchart input')?.checked; }
+function bmpValTxt(key){ const raw=getVal(bmpSrcId(key)); return (/mmol/i.test(raw) || /^(lo|hi)\b/i.test(raw)) ? raw : raw+' mmol/L'; }
+function bmpDesc(key){ return key==='main' ? `BM ${bmpValTxt(key)}` : `${bmpLabel(key)} CBG ${bmpValTxt(key)}`; }
+function bmpFmt(n){ return Number.isInteger(n) ? n.toFixed(1) : String(n); }
+function bmpPanelHtml(key){
+  const p='bmp_'+key;
+  const sevOpts = '<option value="">\u2014 select severity</option>' + ['mild','moderate','severe'].map(k=>`<option value="${k}">${bmpEsc(BMP_HYPO[k].label)}</option>`).join('');
+  const sets = ['mild','moderate','severe'].map(k=>`<div id="${p}_set_${k}" style="display:none;">${BMP_HYPO[k].steps.map((st,i)=>`<div class="opt"><input type="checkbox" id="${p}_${k}_${i}"><label>${bmpEsc(st[0])}</label></div>`).join('')}</div>`).join('');
+  const common = BMP_COMMON.map((t,i)=>`<div class="opt"><input type="checkbox" id="${p}_c_${i}"><label>${bmpEsc(t)}</label></div>`).join('');
+  const nodm = BMP_NODM.map((t,i)=>`<div class="opt"><input type="checkbox" id="${p}_n_${i}"><label>${bmpEsc(t)}</label></div>`).join('');
+  const hyper = BMP_HYPER.map((t,i)=>`<div class="opt"><input type="checkbox" id="${p}_h_${i}"><label>${bmpEsc(t)}</label></div>` + (i===0 ? `<input type="text" id="${p}_ketval" placeholder="ketone result, e.g. 0.3mmol/L or negative">` : '')).join('');
+  return `<div class="reveal" id="${p}_hypo" style="border:2px solid var(--danger); border-radius:var(--radius); padding:10px; margin-top:8px; background:#FDF1EE;">
+    <div class="hint" id="${p}_hypoTitle" style="color:var(--danger); font-weight:800;"></div>
+    <div class="hint">Trust Adult Hypoglycaemia Flow Chart (WAHT-END-004): repeat CBG after 15 min (10\u201315 min if severe); contact a doctor if still &lt;4 after 3 treatments; IV/IM treatment needs a Datix; IM glucagon can take up to 15 min and may be ineffective (undernourished, severe liver disease, sulfonylurea-induced or repeated hypoglycaemia).</div>
+    <div class="hint" id="${p}_nodmHint" style="display:none; color:var(--danger); font-weight:600;">No diabetes diagnosis ticked: hypoglycaemia is &lt;3.3 mmol/L without diabetes \u2014 confirm with a venous sample and escalate to a senior doctor.</div>
+    <label class="field">Severity</label><select id="${p}_sev" onchange="updateBMProtocol('${key}')">${sevOpts}</select>
+    ${sets}
+    <input type="text" id="${p}_meds" placeholder="Medicine given (drug, dose, route, time) under Discretionary Medicine Policy" style="margin-top:6px;">
+    <input type="text" id="${p}_repeat" placeholder="Repeat CBG readings (time: value), e.g. 09:15 3.2, 09:30 4.8" style="margin-top:6px;">
+    <div class="hint" style="margin-top:6px; font-weight:600;">After the episode:</div>
+    ${common}
+    <div id="${p}_nodmBlock" style="display:none;">${nodm}</div>
+  </div>
+  <div class="reveal" id="${p}_hyper" style="border:2px solid var(--danger); border-radius:var(--radius); padding:10px; margin-top:8px; background:#FDF1EE;">
+    <div class="hint" id="${p}_hyperTitle" style="color:var(--danger); font-weight:800;"></div>
+    <div class="hint" id="${p}_ket15" style="display:none; color:var(--danger); font-weight:600;">CBG above 15 mmol/L \u2014 check ketones.</div>
+    <div class="hint">Trust insulin chart: for hyperglycaemia refer to WAHT-END-001 (Diabetic Ketoacidosis) and WAHT-END-006 (Initiation of Insulin in Adults).</div>
+    ${hyper}
+  </div>`;
+}
+function initBMProtocolPanels(){
+  const mainHolder = document.getElementById('bmpMainHolder');
+  if(mainHolder) mainHolder.innerHTML = bmpPanelHtml('main');
+}
+function bmChartBlockHtml(){
+  return `<div class="hint" style="margin-top:8px; font-weight:600;">BM (blood glucose) monitoring - target 7.0-11.0 mmol/L unless otherwise indicated; below 4.0 mmol/L needs action and treatment (hospital insulin chart WR2169). The hyperglycaemia protocol triggers above 15 mmol/L; the target range below is for the record only.</div>
+    <div class="row2">
+      <div><label class="field">Target range if different - low (record only)</label><input type="text" id="dm_target_lo" placeholder="7.0"></div>
+      <div><label class="field">Target range if different - high (record only)</label><input type="text" id="dm_target_hi" placeholder="11.0"></div>
+    </div>
+    <div class="row2" id="dmBM3amWrap" style="display:none;"><div><label class="field">3am (insulin patients, or if pre-bedtime is 7.0 or below)</label><input type="text" id="dm_bm_3am" oninput="updateBMProtocol('3am')" placeholder="e.g. 6.4mmol/L"></div></div>
+    <div class="hint" id="dmBM3amHint" style="display:none; color:var(--danger); font-weight:600;">Pre-bedtime CBG is 7.0 mmol/L or below - check CBG at 03:00 (per the insulin chart).</div>
+    <div class="row2">
+      <div><label class="field">Pre-breakfast</label><input type="text" id="dm_bm_breakfast" oninput="updateBMProtocol('breakfast')" placeholder="e.g. 7.1mmol/L"></div>
+      <div><label class="field">Pre-lunch</label><input type="text" id="dm_bm_lunch" oninput="updateBMProtocol('lunch')" placeholder="e.g. 6.8mmol/L"></div>
+    </div>
+    <div class="row2">
+      <div><label class="field">Pre-tea</label><input type="text" id="dm_bm_tea" oninput="updateBMProtocol('tea')" placeholder="e.g. 7.5mmol/L"></div>
+      <div><label class="field">Pre-bedtime</label><input type="text" id="dm_bm_bedtime" oninput="updateBMProtocol('bedtime')" placeholder="e.g. 8.0mmol/L"></div>
+    </div>
+    <div class="row2">
+      <div><label class="field">Other - when/why (optional)</label><input type="text" id="dm_bm_other_when" oninput="updateBMProtocol('other')" placeholder="e.g. 14:00, symptomatic"></div>
+      <div><label class="field">Other - reading</label><input type="text" id="dm_bm_other" oninput="updateBMProtocol('other')" placeholder="e.g. 3.6mmol/L"></div>
+    </div>
+    <div id="dmBMProtocolHolder">${BMP_KEYS_DM.map(k=>bmpPanelHtml(k)).join('')}</div>`;
+}
+function updateBMProtocol(key){
+  const p='bmp_'+key;
+  const hypo=document.getElementById(p+'_hypo'), hyper=document.getElementById(p+'_hyper');
+  if(!hypo || !hyper) return;
+  const v=bmpValue(key), active=bmpActive(key);
+  const isHypo = active && v!==null && v<4.0;
+  const hi = bmpHi();
+  const isHyper = active && v!==null && v>hi;
+  hypo.classList.toggle('show', isHypo);
+  hyper.classList.toggle('show', isHyper);
+  const label=bmpLabel(key);
+  if(isHypo){
+    document.getElementById(p+'_hypoTitle').textContent = `\u26a0 ${bmpDesc(key)} \u2014 hypoglycaemia (<4.0 mmol/L), follow the hypoglycaemia protocol`;
+    const noDM = !bmpIsDM();
+    document.getElementById(p+'_nodmHint').style.display = noDM ? 'block' : 'none';
+    document.getElementById(p+'_nodmBlock').style.display = noDM ? 'block' : 'none';
+    const sev=getVal(p+'_sev');
+    ['mild','moderate','severe'].forEach(k=>{ document.getElementById(`${p}_set_${k}`).style.display = (k===sev) ? 'block' : 'none'; });
+  }
+  if(isHyper){
+    document.getElementById(p+'_hyperTitle').textContent = `\u26a0 ${bmpDesc(key)} \u2014 hyperglycaemia (above 15 mmol/L)`;
+    document.getElementById(p+'_ket15').style.display = v>15 ? 'block' : 'none';
+  }
+  if(key==='bedtime') toggleDMBM3am();
+}
+function refreshAllBMProtocols(){ ['main'].concat(BMP_KEYS_DM).forEach(updateBMProtocol); toggleDMBM3am(); }
+function renderBMCheck(){ updateBMProtocol('main'); }
+function buildBMProtocolText(key){
+  if(!bmpActive(key)) return '';
+  const v=bmpValue(key);
+  if(v===null) return '';
+  const p='bmp_'+key, label=bmpLabel(key), valTxt=bmpValTxt(key);
+  const out=[];
+  if(v<4.0){
+    const sev=getVal(p+'_sev');
+    let t;
+    if(!sev){
+      t = `Hypoglycaemia (${bmpDesc(key)}, <4.0mmol/L) \u2014 Trust Adult Hypoglycaemia Flow Chart (WAHT-END-004) to be followed; treatment not yet documented.`;
+    } else {
+      const done = BMP_HYPO[sev].steps.filter((st,i)=>document.getElementById(`${p}_${sev}_${i}`)?.checked);
+      t = `Hypoglycaemia (${bmpDesc(key)}), ${BMP_HYPO[sev].label}; Trust Adult Hypoglycaemia Flow Chart (WAHT-END-004) \u2014 ` + (done.length ? `steps completed: ${done.map(st=>st[0]).join('; ')}.` : 'treatment steps not yet documented.');
+      const needsDatix = done.some(st=>st[1]);
+      const datixTicked = document.getElementById(p+'_c_5')?.checked;
+      if(needsDatix && !datixTicked) t += ' Datix incident form required (IV/IM treatment) \u2014 not yet documented.';
+    }
+    const meds=getVal(p+'_meds'), rep=getVal(p+'_repeat');
+    if(meds) t += ` Medicine given: ${meds}.`;
+    if(rep) t += ` Repeat CBG: ${rep}.`;
+    const further = BMP_COMMON.filter((c,i)=>document.getElementById(`${p}_c_${i}`)?.checked);
+    if(!bmpIsDM()) BMP_NODM.forEach((c,i)=>{ if(document.getElementById(`${p}_n_${i}`)?.checked) further.push(c); });
+    if(further.length) t += ` Further: ${further.join('; ')}.`;
+    out.push(t);
+  }
+  const hi=bmpHi();
+  if(v>hi){
+    const ticked=[];
+    BMP_HYPER.forEach((c,i)=>{
+      if(document.getElementById(`${p}_h_${i}`)?.checked){
+        if(i===0){ const kv=getVal(p+'_ketval'); ticked.push(kv ? `ketones checked (${kv})` : 'ketones checked'); }
+        else ticked.push(c);
+      }
+    });
+    let t = `Hyperglycaemia (${bmpDesc(key)}), above 15mmol/L`;
+    t += ticked.length ? `: ${ticked.join('; ')}.` : ' \u2014 prescriber review required; refer to DKA guideline WAHT-END-001 if ketones raised or unwell; actions not yet documented.';
+    out.push(t);
+  }
+  return out.join(' ');
 }
 function updateGCSTotal(){
   const e = parseInt(getVal('v_gcs_e')), v = parseInt(getVal('v_gcs_v')), m = parseInt(getVal('v_gcs_m'));
   const total = e+v+m;
   document.getElementById('v_gcs').value = total;
   document.getElementById('v_evm').value = `E${e} V${v} M${m}`;
+  updateNeuroHint();
+}
+function updateNeuroHint(){
+  const hint=document.getElementById('D_neuro_hint'); if(!hint) return;
+  const total=parseInt(getVal('v_gcs'));
+  const baseline=document.getElementById('D_baseline_chk')?.checked;
+  const changed = document.getElementById('D_other_chk')?.checked || (!isNaN(total) && total<15 && !baseline);
+  hint.style.display = changed ? 'block' : 'none';
 }
 let fbEntryCount = 1;
 let fbExtraIntake = {};
@@ -1855,6 +2123,7 @@ function renderPainCheck(){
   const panel = document.getElementById('painMgmtPanel');
   panel.classList.toggle('show', !!level && level !== 'none');
 }
+initBMProtocolPanels();
 renderBMCheck();
 updateGCSTotal();
 
@@ -1885,23 +2154,23 @@ const STATIC_PHRASES = {
   E_turned: ["Turned and repositioned; pressure areas checked and recorded, appear intact.", "Repositioned as per turning chart; pressure areas checked, no concerns noted.", "Assisted to reposition; pressure areas inspected and documented as intact."],
   E_skinmap: ["Skin map completed and pressure areas documented as per SSKIN bundle.", "Skin map done this shift; pressure areas checked and recorded.", "Skin integrity mapped and documented per SSKIN protocol, no new areas of concern."],
   E_teds: ["TED stockings in situ.", "TEDs applied and in situ.", "Anti-embolism stockings in place."],
-  diet_normal: ["Patient can have a normal diet, no texture modification required.", "Normal diet tolerated, no modification needed.", "Eating a normal, unmodified diet."],
-  diet_L7: ["Patient can have IDDSI Level 7 (Easy to Chew) diet.", "IDDSI Level 7 (Easy to Chew) diet suitable.", "Tolerating IDDSI Level 7 (Easy to Chew) diet."],
-  diet_L6: ["Patient can have IDDSI Level 6 (Soft & Bite-Sized) diet.", "IDDSI Level 6 (Soft & Bite-Sized) diet suitable.", "Tolerating IDDSI Level 6 (Soft & Bite-Sized) diet."],
-  diet_L5: ["Patient can have IDDSI Level 5 (Minced & Moist) diet.", "IDDSI Level 5 (Minced & Moist) diet suitable.", "Tolerating IDDSI Level 5 (Minced & Moist) diet."],
-  diet_L4: ["Patient can have IDDSI Level 4 (Pureed) diet.", "IDDSI Level 4 (Pureed) diet suitable.", "Tolerating IDDSI Level 4 (Pureed) diet."],
-  diet_L3: ["Patient can have IDDSI Level 3 (Liquidised) diet.", "IDDSI Level 3 (Liquidised) diet suitable.", "Tolerating IDDSI Level 3 (Liquidised) diet."],
-  diet_soupsweet: ["Patient can have soup and sweet.", "Soup and sweet diet suitable.", "Tolerating soup and sweet diet."],
-  diet_nbm: ["Patient is nil by mouth for post-operative/pre-operative management.", "NBM for peri-operative management.", "Kept nil by mouth as part of peri-operative care."],
-  diet_partial: ["Refused diet earlier in the shift; tolerated some intake later on.", "Declined food initially, accepted a small amount later in the shift.", "Reluctant to eat earlier, encouraged and took some intake later with support."],
-  fluid_free: ["Patient can have free fluids, thin/unmodified (IDDSI Level 0); encouraged to increase oral fluid intake.", "Free (thin) fluids tolerated, no thickening required; oral intake encouraged.", "Taking free fluids without modification; encouraged to keep intake up."],
-  fluid_clear: ["Patient can have clear fluids \u2014 suggested strained apple juice, strained cranberry juice, strained lemonade.", "Clear fluids only \u2014 offered strained apple juice, cranberry juice or lemonade.", "Tolerating clear fluids; suggested pulp-free apple juice, cranberry juice or lemonade."],
-  fluid_sip: ["Patient can sip water only.", "Sips of water only permitted and tolerated.", "Sipping water only as advised."],
-  fluid_L1: ["Patient can have IDDSI Level 1 (Slightly Thick) fluids, thickened as prescribed.", "IDDSI Level 1 (Slightly Thick) fluids given as prescribed, tolerated well.", "Tolerating IDDSI Level 1 (Slightly Thick) thickened fluids."],
-  fluid_L2: ["Patient can have IDDSI Level 2 (Mildly Thick) fluids, thickened as prescribed.", "IDDSI Level 2 (Mildly Thick) fluids given as prescribed, tolerated well.", "Tolerating IDDSI Level 2 (Mildly Thick) thickened fluids."],
-  fluid_L3f: ["Patient can have IDDSI Level 3 (Moderately Thick) fluids, thickened as prescribed.", "IDDSI Level 3 (Moderately Thick) fluids given as prescribed, tolerated well.", "Tolerating IDDSI Level 3 (Moderately Thick) thickened fluids."],
-  fluid_L4f: ["Patient can have IDDSI Level 4 (Extremely Thick) fluids, thickened as prescribed.", "IDDSI Level 4 (Extremely Thick) fluids given as prescribed, tolerated well.", "Tolerating IDDSI Level 4 (Extremely Thick) thickened fluids, taken by spoon."],
-  fluid_nbm: ["Patient is nil by mouth for fluids; confirmed with patient not to have any oral fluid intake.", "No oral fluids permitted; reinforced with patient as part of peri-operative/clinical management.", "Kept nil by mouth for fluids; patient understands and is compliant."],
+  diet_normal: ["Having a normal diet.", "On a normal diet, no changes needed.", "Eating a normal diet."],
+  diet_L7: ["Having an easy-to-chew diet.", "On an easy-to-chew diet, no hard or tough foods.", "Eating easy-to-chew food."],
+  diet_L6: ["Having a soft, bite-sized diet.", "On soft, bite-sized food.", "Eating soft food cut into small pieces."],
+  diet_L5: ["Having a minced and moist diet.", "On minced, moist food.", "Eating minced and moist food."],
+  diet_L4: ["Having a pureed diet.", "On pureed food.", "Eating pureed food."],
+  diet_L3: ["Having a liquidised diet.", "On liquidised food.", "Eating liquidised food."],
+  diet_soupsweet: ["Having soup and sweet only.", "On soup and sweet diet.", "Soup and sweet only for now."],
+  diet_nbm: ["Nil by mouth, nothing to eat.", "Not allowed to eat for now (nil by mouth).", "Kept nil by mouth, nothing to eat."],
+  diet_partial: ["Refused food earlier in the shift but ate a little later.", "Didn't want to eat at first, took some later on.", "Wouldn't eat earlier, managed a small amount later with encouragement."],
+  fluid_free: ["Drinking normally, encouraged to drink more.", "Free to drink as normal, encouraged to keep drinking.", "Having normal fluids, encouraged to drink plenty."],
+  fluid_clear: ["Clear fluids only, such as water, squash or clear juice.", "Having clear fluids only (no milk or thick drinks).", "On clear fluids only for now."],
+  fluid_sip: ["Sips of water only.", "Allowed small sips of water only.", "Only having sips of water for now."],
+  fluid_L1: ["Having slightly thickened drinks.", "Drinks thickened slightly.", "On slightly thick drinks."],
+  fluid_L2: ["Having mildly thickened drinks.", "Drinks thickened to mildly thick.", "On mildly thick drinks."],
+  fluid_L3f: ["Having moderately thickened drinks.", "Drinks thickened to moderately thick.", "On moderately thick drinks."],
+  fluid_L4f: ["Having extremely thick drinks, taken with a spoon.", "Drinks thickened to extremely thick, given by spoon.", "On extremely thick drinks, taken by spoon."],
+  fluid_nbm: ["Nil by mouth, no drinks.", "Not allowed to drink anything for now (nil by mouth).", "Kept nil by mouth, nothing to drink."],
   urine_normal: ["Passed urine in the toilet, clear and pale yellow, no signs of UTI such as burning or increased frequency.", "Voiding normally in the toilet; urine clear, pale yellow, no dysuria or frequency reported.", "Passing urine without difficulty, clear pale yellow, no signs of urinary tract infection."],
   footer: ["Call bell within reach. Hand hygiene applied. Safety maintained throughout shift.", "Call bell in reach throughout. Hand hygiene maintained. Patient safety needs met.", "Call bell placed within reach, hand hygiene practised, safety maintained for duration of shift.", "Nil concerns at the time of writing. Call bell within reach, hand hygiene applied.", "No concerns to report at present. Call bell kept within reach, hand hygiene maintained throughout.", "Nothing further to escalate at this time. Call bell accessible, hand hygiene upheld throughout shift."],
 };
@@ -2119,11 +2388,26 @@ function varyGCS2(gcs, evm){
 function varyBM(bm){
   if(bm==='') return `Blood glucose [X] mmol/L recorded.`;
   const v=parseFloat(bm);
-  if(v<4) return pick([`Blood glucose ${bm} mmol/L \u2014 hypoglycaemia noted, treated as per protocol, surgical team aware.`, `BM ${bm} mmol/L, hypoglycaemic; hypo protocol commenced, team informed.`]);
-  if(v>11) return pick([`Blood glucose ${bm} mmol/L, elevated; surgical team aware, monitored as per protocol.`, `BM ${bm} mmol/L \u2014 hyperglycaemia noted, insulin/sliding scale reviewed as appropriate.`]);
+  if(v<4) return pick([`Blood glucose ${bm} mmol/L \u2014 hypoglycaemia (<4mmol/L), see hypoglycaemia protocol documentation.`, `BM ${bm} mmol/L, hypoglycaemic \u2014 see hypoglycaemia protocol documentation.`]);
+  if(v>11) return pick([`Blood glucose ${bm} mmol/L, elevated.`, `BM ${bm} mmol/L \u2014 raised.`]);
   return pick([`Blood glucose ${bm} mmol/L, within normal range.`, `BM ${bm} mmol/L, normoglycaemic.`, `Capillary glucose ${bm} mmol/L, within normal limits.`]);
 }
 
+const DIETFLUID_REASON_PLAIN = {
+  'Pre-operative fasting':'fasting before surgery',
+  'Post-operative recovery/bowel rest':'resting the bowel after surgery',
+  'Dysphagia \u2014 SALT assessment pending':'swallowing difficulty, waiting for the speech and language therapy (SALT) assessment',
+  'Dysphagia \u2014 SALT assessment completed, diet as recommended':'swallowing difficulty, following the speech and language therapy (SALT) advice',
+  'Dysphagia \u2014 SALT assessment pending (thickened fluids)':'swallowing difficulty, waiting for the speech and language therapy (SALT) assessment',
+  'Dysphagia \u2014 SALT assessment completed, fluids as recommended':'swallowing difficulty, following the speech and language therapy (SALT) advice',
+  'Reduced conscious level affecting safe swallow':'drowsy, not safe to swallow',
+  'Bowel obstruction/ileus':'bowel blockage / bowel not working yet',
+  'Nausea/vomiting':'feeling sick / vomiting',
+  'Aspiration risk':'risk of food or drink going down the wrong way',
+  'Awaiting endoscopy/procedure':'waiting for a scope/procedure',
+  'Fluid restriction (cardiac/renal/hepatic/hyponatraemia)':'fluid restriction (heart, kidney, liver or low sodium)'
+};
+function plainDietFluidReason(r){ return DIETFLUID_REASON_PLAIN[r] || r; }
 const MOBILITY_PHRASES = {
   mobile_indep: ["Mobilising independently and steady on feet, no aids or assistance required.", "Steady and independent with mobility, no falls concerns noted.", "Mobilises unaided, gait steady, no concerns."],
   mobile_ao1: ["Mobilising with the assistance of 1 (AO1), steady throughout.", "Requires assistance of 1 staff member to mobilise safely, no aid used; tolerated well.", "Mobilised with AO1 support, no walking aid needed, stable throughout."],
@@ -2138,8 +2422,8 @@ const MOBILITY_PHRASES = {
   sarastedy_ao2: ["Transferred using a Sara Stedy with assistance of 2 (AO2), tolerated well.", "Used Sara Stedy standing/turning aid for transfer with 2 staff members assisting; weight-bearing and stable throughout.", "Mobilised/transferred via Sara Stedy with AO2 support, tolerated well."],
   standhoist_ao1: ["Transferred using a standing hoist with assistance of 1 (AO1), tolerated well.", "Standing hoist used for transfer with 1 staff member assisting.", "Uses standing hoist for bed-chair transfers with AO1 support."],
   standhoist_ao2: ["Transferred using a standing hoist with assistance of 2 (AO2), tolerated well.", "Standing hoist used for transfer with 2 staff members assisting.", "Uses standing hoist for bed-chair transfers with AO2 support."],
-  fullhoist_ao2: ["All transfers via full hoist with assistance of 2 (AO2).", "Hoist transfer used for all moves with 2 staff members assisting, tolerated well, no distress noted.", "Full hoist required for transfers with AO2 support; skin checked post-transfer."],
-  bedbound: ["Remains nursed in bed this shift; passive limb exercises and repositioning carried out.", "Bed-bound at present; turned and repositioned regularly, pressure areas checked.", "Unable to mobilise this shift; repositioned as per turning chart."]
+  fullhoist_ao2: ["All transfers via full hoist with assistance of 2 (AO2).", "Hoist transfer used for all moves with 2 staff members assisting, tolerated well, no distress noted.", "Full hoist required for transfers with AO2 support."],
+  bedbound: ["Remains nursed in bed this shift, not mobilising.", "Bed-bound at present.", "Unable to mobilise this shift, nursed in bed."]
 };
 
 // ---- Device detail sections ----
@@ -2183,6 +2467,22 @@ function interpretGas(ph,pco2,hco3,lactate,k){
   }
   return msgs;
 }
+function gasRepeatSlotHtml(prefix){
+  const p = prefix+'2';
+  return `<div class="reveal" id="${p}_gasBlock" style="margin-left:18px; margin-top:6px; border-left:3px solid var(--primary); padding-left:10px;">
+    <div class="hint" style="font-weight:700;">Repeat gas (second slot)</div>
+    <div class="row">
+      <div><label class="field">ABG / VBG</label><select id="${p}_gas" onchange="updateGasInterp('${prefix}')"><option value="">Same as first</option><option value="ABG">ABG</option><option value="VBG">VBG</option></select></div>
+      <div><label class="field">Time</label><input type="text" id="${p}_time" placeholder="e.g. 16:30"></div>
+      <div><label class="field">pH</label><input type="text" id="${p}_ph" oninput="updateGasInterp('${prefix}')" placeholder="e.g. 7.35"></div>
+      <div><label class="field">pCO2 (kPa)</label><input type="text" id="${p}_pco2" oninput="updateGasInterp('${prefix}')" placeholder="e.g. 5.2"></div>
+      <div><label class="field">HCO3 (mmol/L)</label><input type="text" id="${p}_hco3" oninput="updateGasInterp('${prefix}')" placeholder="e.g. 24"></div>
+      <div><label class="field">Lactate (mmol/L)</label><input type="text" id="${p}_lactate" oninput="updateGasInterp('${prefix}')" placeholder="e.g. 1.2"></div>
+      <div><label class="field">K+ (mmol/L)</label><input type="text" id="${p}_k" oninput="updateGasInterp('${prefix}')" placeholder="e.g. 4.5"></div>
+    </div>
+    <div class="hint" id="${p}_gasInterp" style="font-weight:600;"></div>
+  </div>`;
+}
 function updateGasInterp(prefix){
   const gas = getVal(prefix+'_gas');
   const block = document.getElementById(prefix+'_gasBlock');
@@ -2194,6 +2494,15 @@ function updateGasInterp(prefix){
   const interpEl = document.getElementById(prefix+'_gasInterp');
   const anyValue = [ph,pco2,hco3,lactate,k].some(v=>v!=='' && v!==undefined);
   if(interpEl) interpEl.textContent = !anyValue ? 'Enter results to see interpretation.' : (msgs.length ? msgs.join(' ') : 'Values within normal range.');
+  const repBlock = document.getElementById(prefix+'2_gasBlock');
+  if(repBlock){
+    repBlock.classList.toggle('show', !!document.getElementById(prefix+'_gas_repeat')?.checked);
+    const ph2=getVal(prefix+'2_ph'), pco22=getVal(prefix+'2_pco2'), hco32=getVal(prefix+'2_hco3'), lac2=getVal(prefix+'2_lactate'), k2=getVal(prefix+'2_k');
+    const msgs2 = interpretGas(ph2,pco22,hco32,lac2,k2);
+    const any2 = [ph2,pco22,hco32,lac2,k2].some(v=>v!=='');
+    const el2 = document.getElementById(prefix+'2_gasInterp');
+    if(el2) el2.textContent = !any2 ? 'Enter repeat results to see interpretation.' : (msgs2.length ? msgs2.join(' ') : 'Values within normal range.');
+  }
 }
 function abgText(f, prefix){
   const gas = f[prefix+'_gas'];
@@ -2216,6 +2525,19 @@ function abgText(f, prefix){
     if(document.getElementById(prefix+'_gas_outreach')?.checked) actions.push('outreach/senior review requested');
     if(document.getElementById(prefix+'_gas_pathway')?.checked) actions.push('relevant pathway actioned');
     out += actions.length ? ` Action taken: ${actions.join(', ')}.` : ' Awaiting action/surgical team review.';
+  }
+  if(document.getElementById(prefix+'_gas_repeat')?.checked){
+    const g2 = getVal(prefix+'2_gas') || gas, t2 = getVal(prefix+'2_time');
+    const ph2=getVal(prefix+'2_ph'), pco22=getVal(prefix+'2_pco2'), hco32=getVal(prefix+'2_hco3'), lac2=getVal(prefix+'2_lactate'), k2=getVal(prefix+'2_k');
+    const p2 = [];
+    if(ph2) p2.push(`pH ${ph2}`);
+    if(pco22) p2.push(`pCO2 ${pco22}kPa`);
+    if(hco32) p2.push(`HCO3 ${hco32}mmol/L`);
+    if(lac2) p2.push(`lactate ${lac2}mmol/L`);
+    if(k2) p2.push(`K+ ${k2}mmol/L`);
+    out += ` Repeat ${g2}${t2 ? ' at '+t2 : ''}: ${p2.length ? p2.join(', ') : '[results pending]'}.`;
+    const interp2 = interpretGas(ph2,pco22,hco32,lac2,k2);
+    if(interp2.length) out += ' ' + interp2.join(' ');
   }
   return out;
 }
@@ -2328,32 +2650,44 @@ const DEVICE_TEMPLATES = {
       return base;
     }
   },
-  insulin: {
-    title:'Insulin (subcutaneous)',
+  bmchart: {
+    title:'Insulin / BM monitoring',
+    bmChart: true,
     fields:[
+      {id:'dm_insulin', label:'On insulin?', type:'select', options:['No','Yes']},
       {id:'insulin_regimen', label:'Regimen', type:'select', options:['Basal-bolus (multiple daily injections)','Twice-daily mixed','Once-daily long-acting only','Insulin pump (CSII)','Variable rate IV infusion (see Sliding Scale/VRIII device)']},
       {id:'insulin_type', label:'Insulin type/brand', type:'select_other', options:['NovoRapid (aspart, rapid-acting)','Humalog (lispro, rapid-acting)','Apidra (glulisine, rapid-acting)','Fiasp (aspart, ultra-rapid)','Actrapid (soluble, short-acting)','Insulatard (isophane, intermediate)','Lantus (glargine, long-acting)','Levemir (detemir, long-acting)','Toujeo (glargine U300, long-acting)','Tresiba (degludec, ultra-long-acting)','NovoMix 30 (mixed)','Humalog Mix 25 (mixed)','Humalog Mix 50 (mixed)','Humulin M3 (mixed)']},
       {id:'insulin_dose', label:'Dose/timing (as individually prescribed)', type:'text', placeholder:'e.g. 10 units before breakfast, 8 units before dinner; Lantus 20 units at 22:00'},
       {id:'insulin_given', label:'Status', type:'select', options:['Given as prescribed','Withheld']},
       {id:'insulin_withhold_reason', label:'Reason withheld (if applicable)', type:'text', placeholder:'e.g. NBM, hypoglycaemia, BM not yet checked'},
-      {id:'insulin_bm', label:'Most recent BM/blood glucose (optional)', type:'text', placeholder:'e.g. 7.2mmol/L at 08:00'},
     ],
     build:(f)=>{
-      const regimen=f.insulin_regimen||'Basal-bolus (multiple daily injections)', type=f.insulin_type||'[type/brand]';
-      const dose=f.insulin_dose||'[dose/timing as prescribed]', status=f.insulin_given||'Given as prescribed';
-      const withholdReason=f.insulin_withhold_reason, bm=f.insulin_bm;
-
-      let base = pick([
-        `Insulin (${regimen.toLowerCase()}) \u2014 ${type}, ${dose}.`,
-        `Patient on insulin, ${regimen.toLowerCase()} regimen \u2014 ${type}, ${dose}.`
-      ]);
-      if(status==='Withheld'){
-        base += ` Dose withheld${withholdReason?': '+withholdReason:''} \u2014 surgical SHO/diabetes team informed.`;
-      } else {
-        base += ' Given as prescribed.';
+      const out=[];
+      if(f.dm_insulin==='Yes'){
+        const regimen=f.insulin_regimen||'Basal-bolus (multiple daily injections)', type=f.insulin_type||'[type/brand]';
+        const dose=f.insulin_dose||'[dose/timing as prescribed]', status=f.insulin_given||'Given as prescribed';
+        const withholdReason=f.insulin_withhold_reason;
+        let base = pick([
+          `Insulin (${regimen.toLowerCase()}) \u2014 ${type}, ${dose}.`,
+          `Patient on insulin, ${regimen.toLowerCase()} regimen \u2014 ${type}, ${dose}.`
+        ]);
+        base += status==='Withheld' ? ` Dose withheld${withholdReason?': '+withholdReason:''} \u2014 surgical SHO/diabetes team informed.` : ' Given as prescribed.';
+        out.push(base);
       }
-      if(bm) base += ` Most recent blood glucose: ${bm}.`;
-      return base;
+      const bmSlots = [
+        ['3am', getVal('dm_bm_3am')],
+        ['pre-breakfast', getVal('dm_bm_breakfast')],
+        ['pre-lunch', getVal('dm_bm_lunch')],
+        ['pre-tea', getVal('dm_bm_tea')],
+        ['pre-bedtime', getVal('dm_bm_bedtime')],
+        [bmpLabel('other').toLowerCase(), getVal('dm_bm_other')],
+      ].filter(([,v])=>v);
+      if(bmSlots.length){
+        const tlo=getVal('dm_target_lo'), thi=getVal('dm_target_hi');
+        out.push('BM monitoring' + (bmpIsDM() ? ' (diabetic)' : '') + ((tlo||thi) ? `, target ${tlo||'7.0'}\u2013${thi||'11.0'}mmol/L` : '') + ': ' + bmSlots.map(([label,v])=>`${label}: ${v}`).join(', ') + '.');
+        BMP_KEYS_DM.forEach(k=>{ const t=buildBMProtocolText(k); if(t) out.push(t); });
+      }
+      return out.join('\n');
     }
   },
   vte_mech: {
@@ -3402,6 +3736,7 @@ function renderDeviceSections(){
         if(t.ciwaScore && ['ciwa_nausea','ciwa_tremor','ciwa_sweats','ciwa_anxiety','ciwa_agitation','ciwa_tactile','ciwa_auditory','ciwa_visual','ciwa_headache','ciwa_orientation'].includes(f.id)){
           extraAttr = ` onchange="updateCiwaScore()"`;
         }
+        if(t.bmChart && f.id==='dm_insulin') extraAttr = ` onchange="toggleBMInsulin()"`;
         if(t.ribPathway && f.id==='rib_dynamic_pain') extraAttr = ` onchange="toggleRibPainEscalation()"`;
         if(t.ribPathway && f.id==='rib_step') extraAttr = ` onchange="toggleRibReferralSlip()"`;
         if(t.ribScoreCalc && (f.id==='rib_breaks' || f.id==='rib_sides' || f.id==='rib_age_band')) extraAttr = ` oninput="updateRibScore()" onchange="updateRibScore()"`;
@@ -3422,10 +3757,11 @@ function renderDeviceSections(){
       if(t.gasPrefix){
         card.innerHTML += `<div class="reveal" id="${t.gasPrefix}_gasBlock">
           <div class="hint" id="${t.gasPrefix}_gasInterp" style="font-weight:600;"></div>
-          <div class="opt"><input type="checkbox" id="${t.gasPrefix}_gas_repeat"><label>Repeat gas arranged</label></div>
+          <div class="opt"><input type="checkbox" id="${t.gasPrefix}_gas_repeat" onchange="updateGasInterp('${t.gasPrefix}')"><label>Repeat gas arranged</label></div>
           <div class="opt"><input type="checkbox" id="${t.gasPrefix}_gas_medteam"><label>Surgical team informed</label></div>
           <div class="opt"><input type="checkbox" id="${t.gasPrefix}_gas_outreach"><label>Outreach/senior review requested</label></div>
           <div class="opt"><input type="checkbox" id="${t.gasPrefix}_gas_pathway"><label>Relevant pathway actioned (e.g. Sepsis Six / Hyperkalaemia pathway, as appropriate)</label></div>
+          ${gasRepeatSlotHtml(t.gasPrefix)}
         </div>`;
       }
       if(t.ciwaScore){
@@ -3522,6 +3858,7 @@ function renderDeviceSections(){
           </div>
         </div>`;
       }
+      if(t.bmChart){ card.innerHTML += bmChartBlockHtml(); }
       if(t.bloodTests){
         const testHtml = BLOOD_TESTS.map((tn,idx)=>`<div class="opt"><input type="checkbox" id="bs_test_${idx}"><label>${tn}</label></div>`).join('');
         card.innerHTML += `<div class="hint" style="margin-top:8px; font-weight:600;">Tests sent (tick all that apply):</div>${testHtml}<input type="text" id="bs_test_other" placeholder="other test (specify)" style="margin-top:6px;">
@@ -3577,6 +3914,7 @@ function renderDeviceSections(){
     if(devId==='ciwa'){ updateCiwaScore(); }
     if(devId==='ribpathway'){ toggleRibPainEscalation(); toggleRibReferralSlip(); updateRibScore(); }
     if(devId==='ngtube'){ toggleNGFeedingChecklist(); }
+    if(devId==='bmchart'){ toggleBMInsulin(); refreshAllBMProtocols(); }
     if(devId==='metcall'){ MET_CRITERIA.forEach((entry,idx)=>toggleMetCriteria(idx)); }
     if(devId==='drain'){ for(let i=1;i<=drainEntryCount;i++) toggleOtherField('drain_fluid_'+i); }
     if(devId==='rsc'){ RSC_CONDITIONS.forEach((entry,idx)=>{ if(entry.i) toggleComplicationNested('rsc', idx); else toggleComplicationReaction('rsc', idx); }); }
@@ -3750,7 +4088,7 @@ function buildOpening(){
   const lines0 = [];
   if(document.getElementById('postop_chk').checked){
     const day = getVal('postop_day');
-    const procChecked = Array.from(document.querySelectorAll('#procGroupColorectal input:checked, #procGroupUpperGI input:checked, #procGroupHernia input:checked, #procGroupEmergency input:checked, #procGroupOrtho input:checked')).map(i=>i.value);
+    const procChecked = Array.from(document.querySelectorAll('#procGroupColorectal input:checked, #procGroupUpperGI input:checked, #procGroupHernia input:checked, #procGroupEmergency input:checked, #procGroupThoracic input:checked, #procGroupOrtho input:checked')).map(i=>i.value);
     const procLabels = PROCEDURES.filter(p=>procChecked.includes(p.id)).map(p=>p.label);
     const procTxt = procLabels.length ? ` following ${procLabels.join(', ').toLowerCase()}` : '';
     lines0.push(`${day}${procTxt}.`);
@@ -3916,6 +4254,7 @@ function buildNoteText(){
   }
   if(document.getElementById('D_other_chk').checked) lines.push(`Neurological concern (new/acute): ${getVal('D_other_text')}`);
 
+  if(document.getElementById('D_pupils_chk').checked){
   const pLSize=getVal('D_pupil_L_size'), pRSize=getVal('D_pupil_R_size'), pLReact=getVal('D_pupil_L_react'), pRReact=getVal('D_pupil_R_react');
   const pupilsUnequalSize = pLSize !== pRSize;
   const pupilsAbnormalReact = pLReact!=='Brisk' || pRReact!=='Brisk';
@@ -3925,12 +4264,16 @@ function buildNoteText(){
     lines.push(`Pupils: L ${pLSize}mm (${pLReact.toLowerCase()}), R ${pRSize}mm (${pRReact.toLowerCase()})${pupilsUnequalSize?' \u2014 unequal size (anisocoria)':''}. Surgical SHO informed urgently, concern for raised intracranial pressure/neurological deterioration.`);
   }
 
+  }
+
+  if(document.getElementById('D_power_chk').checked){
   const powerLA=getVal('D_power_LA'), powerRA=getVal('D_power_RA'), powerLL=getVal('D_power_LL'), powerRL=getVal('D_power_RL');
   const powers = [powerLA,powerRA,powerLL,powerRL];
   if(powers.every(p=>p==='5')){
     lines.push(pick(['Muscle power grossly normal in all four limbs (5/5).', 'Power 5/5 in all four limbs, no focal weakness noted.', 'Full muscle power bilaterally, upper and lower limbs (5/5).']));
   } else {
     lines.push(`Muscle power \u2014 left arm ${powerLA}/5, right arm ${powerRA}/5, left leg ${powerLL}/5, right leg ${powerRL}/5. New/asymmetrical weakness noted \u2014 surgical SHO informed urgently, neurological/spinal review considered.`);
+  }
   }
   if(getVal('v_pain') && getVal('v_pain')!=='none'){
     const painMeds = [];
@@ -3947,22 +4290,8 @@ function buildNoteText(){
     if(document.getElementById('pain_other_chk').checked && getVal('pain_other_text')) painMeds.push(getVal('pain_other_text'));
     if(painMeds.length) lines.push(pick([`Analgesia given: ${painMeds.join(', ')}, with effect being monitored.`, `Given ${painMeds.join(', ')} for pain relief.`]));
   }
-  if(document.getElementById('bmLowPanel').style.display==='block'){
-    const items=[];
-    if(document.getElementById('hypo_carb').checked) items.push('quick-acting carbohydrate (or IV glucose/glucagon if severe) given');
-    if(document.getElementById('hypo_recheck').checked) items.push('BM rechecked within 10-15 minutes');
-    if(document.getElementById('hypo_longacting').checked) items.push('longer-acting carbohydrate given once BM >4');
-    if(document.getElementById('hypo_medteam').checked) items.push('surgical SHO informed');
-    lines.push(items.length ? `Hypoglycaemia pathway: ${items.join(', ')}.` : 'Hypoglycaemia pathway commenced (BM <4mmol/L) \u2014 actions pending.');
-  }
-  if(document.getElementById('bmHighPanel').style.display==='block'){
-    const items=[];
-    const ketoneVal = getVal('hyper_ketone_value');
-    if(document.getElementById('hyper_ketone_chk').checked) items.push(`ketones checked${ketoneVal? ' ('+ketoneVal+')':''}`);
-    if(document.getElementById('hyper_medteam').checked) items.push('surgical SHO informed');
-    if(document.getElementById('hyper_sliding').checked) items.push('sliding scale/insulin reviewed');
-    lines.push(items.length ? `BM >15mmol/L: ${items.join(', ')}.` : 'BM >15mmol/L \u2014 ketones not yet checked, action pending.');
-  }
+  const bmpMain = buildBMProtocolText('main');
+  if(bmpMain) lines.push(bmpMain);
   lines.push('');
 
   lines.push('E:');
@@ -4038,26 +4367,11 @@ function buildNoteText(){
   }
   lines.push('');
 
-  if(document.querySelector('#dx_dm input')?.checked){
-    const bmSlots = [
-      ['3am', getVal('dm_bm_3am')],
-      ['pre-breakfast', getVal('dm_bm_breakfast')],
-      ['pre-lunch', getVal('dm_bm_lunch')],
-      ['pre-tea', getVal('dm_bm_tea')],
-      ['pre-bedtime', getVal('dm_bm_bedtime')],
-    ].filter(([,v])=>v);
-    if(bmSlots.length){
-      lines.push('BM monitoring (diabetic):');
-      lines.push(bmSlots.map(([label,v])=>`${label}: ${v}`).join(', ') + '.');
-      lines.push('');
-    }
-  }
-
   const mobSelected = getVal('mobilitySelect');
   if(mobSelected && MOBILITY_PHRASES[mobSelected]){
     lines.push('Mobility:');
     lines.push(pick(MOBILITY_PHRASES[mobSelected]));
-    if(document.getElementById('mob_extra_chk').checked){
+    {
       const extras = [];
       if(document.getElementById('mob_passive').checked) extras.push('passive limb exercises carried out');
       if(document.getElementById('mob_active').checked) extras.push('active limb exercises encouraged');
@@ -4065,6 +4379,7 @@ function buildNoteText(){
       if(document.getElementById('mob_physio').checked) extras.push('physiotherapy input/review');
       if(document.getElementById('mob_chestphysio').checked) extras.push('chest physiotherapy given');
       if(document.getElementById('mob_splints').checked) extras.push('splints/positioning aids in use');
+      if(document.getElementById('mob_pressure').checked) extras.push('pressure areas checked during repositioning/transfer');
       const otherExtra = getVal('mob_extra_other');
       if(otherExtra) extras.push(otherExtra);
       if(extras.length) lines.push(capitalize(extras.join(', ')) + '.');
@@ -4078,7 +4393,7 @@ function buildNoteText(){
   if(getVal('dietSel')!=='normal'){
     let dietReason = getVal('dietReasonSel');
     if(dietReason==='Other (specify)') dietReason = getVal('dietReasonSel_other');
-    if(dietReason) dietLine += ` Reason: ${dietReason}.`;
+    if(dietReason) dietLine += ` Reason: ${plainDietFluidReason(dietReason)}.`;
   }
   lines.push(dietLine);
 
@@ -4087,7 +4402,7 @@ function buildNoteText(){
   if(getVal('fluidSel')!=='free'){
     let fluidReason = getVal('fluidReasonSel');
     if(fluidReason==='Other (specify)') fluidReason = getVal('fluidReasonSel_other');
-    if(fluidReason) fluidLine += ` Reason: ${fluidReason}.`;
+    if(fluidReason) fluidLine += ` Reason: ${plainDietFluidReason(fluidReason)}.`;
   }
   lines.push(fluidLine);
   if(document.getElementById('fluidRestrict_chk').checked){
@@ -4096,7 +4411,7 @@ function buildNoteText(){
   }
   if(document.getElementById('fluidORS_chk').checked){
     const o = getVal('fluidORS_text')||'[solution/detail]';
-    lines.push(pick([`Oral rehydration/electrolyte solution given: ${o}.`, `Given ${o} for electrolyte replacement, encouraged as tolerated.`]));
+    lines.push(pick([`Oral rehydration drink given: ${o}.`, `Given ${o} to help replace lost fluid and salts, encouraged to drink as able.`]));
   }
   lines.push('');
 
