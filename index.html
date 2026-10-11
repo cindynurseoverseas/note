@@ -175,6 +175,7 @@
 <div class="card">
     <h2>Devices &amp; Interventions <span class="tag">ticking these reveals a documentation section below</span></h2>
     <div class="hint">Vascular access &amp; IV therapy</div>
+    <div class="hint" id="hdHint" style="display:none; color:var(--primary); font-weight:600; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius); margin-bottom:6px;">Patient is on haemodialysis - document the dialysis access (line / fistula / graft) here. <button type="button" class="reword" style="padding:4px 10px; font-size:0.72rem; margin-left:6px;" onclick="document.querySelector('#dev_hdaccess input').click()">+ Add dialysis access</button></div>
     <div class="pillgroup" id="devGroupVascular"></div>
     <div class="hint" style="margin-top:12px;">Feeding &amp; GI</div>
     <div class="pillgroup" id="devGroupFeeding"></div>
@@ -182,6 +183,7 @@
     <div class="pillgroup" id="devGroupWounds"></div>
     <div class="hint" style="margin-top:12px;">General care</div>
     <div class="hint" id="postOpVteHint" style="display:none; color:var(--primary); font-weight:600; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius); margin-bottom:6px;">Post-operative patient — remember to check VTE mechanical prophylaxis (Flowtron/TEDs) is prescribed and in use.</div>
+    <div class="hint" id="dementiaHint" style="display:none; color:var(--primary); font-weight:600; background:var(--primary-dim); padding:8px 10px; border-radius:var(--radius); margin-bottom:6px;">Patient has dementia / lacks capacity / is under DoLS - document capacity, DoLS and specialist HCA support here. <button type="button" class="reword" style="padding:4px 10px; font-size:0.72rem; margin-left:6px;" onclick="document.querySelector('#dev_dementiacare input').click()">+ Add dementia / MCA / DoLS</button></div>
     <div class="pillgroup" id="devGroupGeneral"></div>
     <div class="hint" style="margin-top:12px;">Investigations / samples</div>
     <div class="pillgroup" id="devGroupInvest"></div>
@@ -1073,8 +1075,12 @@ const DIAGNOSES_COMORBID = [
   {id:'dm', label:'Diabetes mellitus (DM)'},
   {id:'hypertension', label:'Hypertension'},
   {id:'ckd', label:'Chronic kidney disease (CKD)'},
+  {id:'hd', label:'Haemodialysis (renal replacement therapy)'},
   {id:'copd', label:'COPD'},
   {id:'ihd', label:'Ischaemic heart disease (IHD)'},
+  {id:'dementia', label:'Dementia'},
+  {id:'mca_lacks', label:'Lacks capacity (MCA stage 1+2 completed)'},
+  {id:'dols', label:'Under DoLS'},
 ];
 const DIAGNOSES = DIAGNOSES_ACUTE.concat(DIAGNOSES_COLORECTAL, DIAGNOSES_THORACIC, DIAGNOSES_ABDOPELVIC, DIAGNOSES_TRAUMA, DIAGNOSES_COMORBID);
 
@@ -1142,6 +1148,7 @@ const DEVICES_VASCULAR = [
   {id:'cvc', label:'CVC'},
   {id:'picc', label:'PICC'},
   {id:'pvd', label:'Peripheral cannula (PVD)'},
+  {id:'hdaccess', label:'Dialysis access (HD line / fistula)'},
   {id:'ivi', label:'IV fluids (IVI)'},
   {id:'ivabx', label:'IV/PO Antibiotics'},
   {id:'artline', label:'Arterial line'},
@@ -1167,6 +1174,7 @@ const DEVICES_GENERAL = [
   {id:'vte_mech', label:'VTE mechanical prophylaxis (Flowtron/TEDs)'},
   {id:'eol_care', label:'End of life / Individualised Care Plan'},
   {id:'bmchart', label:'Insulin / BM monitoring'},
+  {id:'dementiacare', label:'Dementia / MCA / DoLS / specialist HCA'},
 ];
 
 const DEVICES_INVEST = [
@@ -1241,7 +1249,7 @@ buildPills('dxGroupColorectal', DIAGNOSES_COLORECTAL, 'dx');
 buildPills('dxGroupThoracic', DIAGNOSES_THORACIC, 'dx');
 buildPills('dxGroupAbdoPelvic', DIAGNOSES_ABDOPELVIC, 'dx');
 buildPills('dxGroupTrauma', DIAGNOSES_TRAUMA, 'dx');
-buildPills('dxGroupComorbid', DIAGNOSES_COMORBID, 'dx', toggleDMInsulin);
+buildPills('dxGroupComorbid', DIAGNOSES_COMORBID, 'dx', onComorbidChange);
 buildPills('procGroupColorectal', PROCEDURES_COLORECTAL, 'proc');
 buildPills('procGroupUpperGI', PROCEDURES_UPPERGI, 'proc');
 buildPills('procGroupHernia', PROCEDURES_HERNIA, 'proc');
@@ -1257,7 +1265,20 @@ buildPills('devGroupAnalgesia', DEVICES_ANALGESIA, 'dev', renderDeviceSectionsSa
 buildPills('devGroupPathway', DEVICES_PATHWAY, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupCardiac', DEVICES_CARDIAC, 'dev', renderDeviceSectionsSafe);
 buildPills('devGroupSymptoms', DEVICES_SYMPTOMS, 'dev', renderDeviceSectionsSafe);
-function renderDeviceSectionsSafe(){ renderDeviceSections(); updateTPNRefeedingHint(); updatePostOpHints(); syncBMDevice(); }
+function updateDementiaHint(){
+  const need = ['dementia','mca_lacks','dols'].some(id=>document.querySelector('#dx_'+id+' input')?.checked);
+  const ticked = document.querySelector('#dev_dementiacare input')?.checked;
+  const h = document.getElementById('dementiaHint');
+  if(h) h.style.display = (need && !ticked) ? 'block' : 'none';
+}
+function updateHDHint(){
+  const need = document.querySelector('#dx_hd input')?.checked;
+  const ticked = document.querySelector('#dev_hdaccess input')?.checked;
+  const h = document.getElementById('hdHint');
+  if(h) h.style.display = (need && !ticked) ? 'block' : 'none';
+}
+function onComorbidChange(){ toggleDMInsulin(); updateDementiaHint(); updateHDHint(); }
+function renderDeviceSectionsSafe(){ renderDeviceSections(); updateTPNRefeedingHint(); updatePostOpHints(); syncBMDevice(); updateDementiaHint(); updateHDHint(); }
 function updateTPNRefeedingHint(){
   const tpnTicked = document.querySelector('#dev_tpn input')?.checked;
   const hint = document.getElementById('tpnRefeedingHint');
@@ -2574,6 +2595,38 @@ const PCA_CONDITIONS = [
   {c:'Inadequate analgesia despite appropriate PCA use', r:'Pain and PCA demand/delivery ratio reassessed, acute pain team contacted, background/bolus settings reviewed.'},
   {c:'Persistent nausea/vomiting despite antiemetics', r:'Antiemetic given/reviewed, acute pain team/anaesthetist informed if ongoing.'},
 ];
+const HD_CONCERNS = [
+  {t:'Bleeding from the access site \u2014 firm pressure applied, surgical SHO and renal team informed'},
+  {t:'Line dislodged or pulled out \u2014 firm pressure applied, help called, surgical SHO and renal team informed'},
+  {t:'Fever, chills or rigors \u2014 NEWS2 and sepsis screen done, surgical SHO and renal team informed'},
+  {t:'Pain, swelling or redness of the access arm \u2014 surgical SHO and renal team informed'},
+  {t:'Line not flushing or poor flow reported by dialysis staff \u2014 renal team informed'},
+];
+const HD_CARE = [
+  'access protected \u2014 no blood pressure, blood tests or cannulation on the fistula/graft arm',
+  'dialysis line capped and clamped, not accessed on the ward',
+  'fluid restriction in place',
+  'fluid balance recorded',
+  'weight recorded',
+  'blood pressure monitored closely (low BP can affect a fistula)',
+  'renal team aware and dialysis plan confirmed',
+  'dialysis completed this shift',
+];
+const DEMENTIA_REASONS = [
+  'risk of falls','wandering/exit-seeking','pulling at lines, tubes or drains','agitation/distress','unsafe to be left alone'
+];
+const DEMENTIA_CARE = [
+  'kept within sight / close supervision',
+  'falls prevention measures in place (low bed, sensor mat, call bell in reach, non-slip footwear)',
+  'orientation and reassurance given',
+  'activity/distraction offered (familiar items, conversation, music)',
+  'redirected when wandering/exit-seeking',
+  'non-drug approaches used for agitation/distress',
+  'encouraged and assisted with food and fluids',
+  'assisted with toileting/continence needs',
+  'pain assessed using the Abbey Pain Scale',
+  'lines, tubes and drains protected/checked',
+];
 const BLOOD_TESTS = [
   'FBC','U&E','LFTs','CRP','Coagulation screen (clotting)','Bone profile / calcium','Magnesium','Phosphate',
   'Amylase / lipase','Lactate (lab)','Troponin','Blood cultures','Group & save','Crossmatch',
@@ -2648,6 +2701,77 @@ const DEVICE_TEMPLATES = {
       let base = `Blood samples taken${time?' at '+time:''}${site?' from '+site:''}${reason?' ('+reason+')':''}: ${tests.length ? tests.join(', ') : '[tests]'}.`;
       if(status) base += ` ${status}.`;
       return base;
+    }
+  },
+  hdaccess: {
+    title:'Dialysis access (HD line / fistula)',
+    hdAccess: true,
+    fields:[
+      {id:'hd_type', label:'Type of access', type:'select_other', options:['','Tunnelled dialysis line (Permcath / Tesio)','Non-tunnelled temporary dialysis line (Vascath)','AV fistula','AV graft']},
+      {id:'hd_site', label:'Site', type:'select_other', options:['','Right internal jugular','Left internal jugular','Right femoral','Left femoral','Right subclavian','Left subclavian','Left forearm','Right forearm','Left upper arm','Right upper arm']},
+      {id:'hd_days', label:'Dialysis days', type:'text', placeholder:'e.g. Mon / Wed / Fri'},
+      {id:'hd_session', label:'Dialysis session', type:'select', options:['','Dialysis done this shift','Dialysis due this shift','Not due this shift','Session missed \u2014 renal team informed']},
+      {id:'hd_dressing', label:'Line exit site / dressing', type:'select', options:['','Dressing clean, dry and intact','Dressing soiled \u2014 changed','Dressing loose or peeling \u2014 renal team informed','Not applicable (fistula/graft)']},
+      {id:'hd_thrill', label:'Fistula/graft buzz (thrill/bruit)', type:'select', options:['','Buzz felt','Buzz weaker than usual \u2014 surgical SHO and renal team informed','Buzz absent \u2014 surgical SHO and renal team informed urgently','Not applicable (dialysis line)']},
+    ],
+    build:(f)=>{
+      const lc=(t)=>t.charAt(0).toLowerCase()+t.slice(1);
+      const out=[];
+      const type = f.hd_type || '';
+      if(type){
+        out.push(`Dialysis access: ${type}${f.hd_site ? ', ' + lc(f.hd_site) : ''}.`);
+      } else if(f.hd_site){
+        out.push(`Dialysis access site: ${lc(f.hd_site)}.`);
+      }
+      if(document.querySelector('#dx_hd input')?.checked || type) out.push(`Patient is on haemodialysis${f.hd_days ? ' ('+f.hd_days+')' : ''}.`);
+      if(f.hd_session) out.push(f.hd_session+'.');
+      if(f.hd_dressing && !f.hd_dressing.startsWith('Not applicable')) out.push(f.hd_dressing+'.');
+      if(f.hd_thrill && !f.hd_thrill.startsWith('Not applicable')) out.push(f.hd_thrill+'.');
+      const concerns = HD_CONCERNS.filter((c,i)=>document.getElementById('hd_concern_'+i)?.checked).map(c=>c.t);
+      if(concerns.length) out.push('Concern: '+concerns.join('; ')+'.');
+      const care = HD_CARE.filter((c,i)=>document.getElementById('hd_care_'+i)?.checked);
+      const other = getVal('hd_care_other');
+      if(other) care.push(other);
+      if(care.length) out.push('Care: '+care.join('; ')+'.');
+      return out.join(' ');
+    }
+  },
+  dementiacare: {
+    title:'Dementia / MCA / DoLS / specialist HCA',
+    dementiaCare: true,
+    fields:[
+      {id:'dc_mca', label:'Mental Capacity Act (MCA) assessment', type:'select', options:['','MCA stage 1 and 2 completed \u2014 lacks capacity','MCA stage 1 and 2 completed \u2014 has capacity','MCA not yet completed \u2014 to be raised with the surgical team']},
+      {id:'dc_mca_decision', label:'Decision(s) assessed', type:'text', placeholder:'e.g. treatment, discharge destination'},
+      {id:'dc_bi', label:'Best-interests decision', type:'select', options:['','Best-interests decision made and documented by the clinical team','Best-interests decision pending']},
+      {id:'dc_dols', label:'DoLS (Deprivation of Liberty Safeguards)', type:'select', options:['','Urgent authorisation in place','Standard authorisation granted','Application submitted, awaiting assessment','Application needed \u2014 to be raised with the surgical team/safeguarding','Not applicable']},
+      {id:'dc_dols_dates', label:'DoLS start/expiry (if known)', type:'text', placeholder:'e.g. expires 12/11/2026'},
+      {id:'dc_hca_ratio', label:'Specialist HCA (enhanced care)', type:'select', options:['','1:2 specialist HCA (one HCA to two patients)','1:1 specialist HCA','2:1 (two staff to one patient)','Not required']},
+      {id:'dc_hca_status', label:'Specialist HCA status', type:'select', options:['','Allocated and in place','Requested, not yet allocated \u2014 escalated to the nurse in charge','Not available this shift \u2014 escalated']},
+    ],
+    build:(f)=>{
+      const lc=(t)=>t.charAt(0).toLowerCase()+t.slice(1);
+      const out=[];
+      if(document.querySelector('#dx_dementia input')?.checked) out.push('Patient has dementia.');
+      if(f.dc_mca){
+        const dec = f.dc_mca_decision ? ` regarding ${f.dc_mca_decision}` : '';
+        if(f.dc_mca.includes('lacks')) out.push(`Mental Capacity Act assessment (stages 1 and 2) completed \u2014 patient lacks capacity${dec}.`);
+        else if(f.dc_mca.includes('has capacity')) out.push(`Mental Capacity Act assessment (stages 1 and 2) completed \u2014 patient has capacity${dec}.`);
+        else out.push('Mental Capacity Act assessment not yet completed \u2014 to be raised with the surgical team.');
+      }
+      if(f.dc_bi) out.push(f.dc_bi+'.');
+      if(f.dc_dols){
+        out.push(`DoLS \u2014 ${lc(f.dc_dols)}${f.dc_dols_dates ? ' ('+f.dc_dols_dates+')' : ''}.`);
+      }
+      if(f.dc_hca_ratio && f.dc_hca_ratio!=='Not required'){
+        out.push(`Enhanced care \u2014 ${f.dc_hca_ratio}${f.dc_hca_status ? ': '+lc(f.dc_hca_status) : ''}.`);
+        const reasons = DEMENTIA_REASONS.filter((r,i)=>document.getElementById('dc_reason_'+i)?.checked);
+        if(reasons.length) out.push(`Reason for enhanced care: ${reasons.join(', ')}.`);
+      }
+      const care = DEMENTIA_CARE.filter((c,i)=>document.getElementById('dc_care_'+i)?.checked);
+      const other = getVal('dc_care_other');
+      if(other) care.push(other);
+      if(care.length) out.push(`Care provided: ${care.join('; ')}.`);
+      return out.join(' ');
     }
   },
   bmchart: {
@@ -3857,6 +3981,20 @@ function renderDeviceSections(){
             <div><label class="field">Feed check (correct feed, correct rate)</label><select id="ng_feedcheck"><option value="">\u2014</option><option value="Yes">Yes</option><option value="No">No</option><option value="N/A">N/A</option></select></div>
           </div>
         </div>`;
+      }
+      if(t.hdAccess){
+        const cHtml = HD_CONCERNS.map((c,i)=>`<div class="opt"><input type="checkbox" id="hd_concern_${i}"><label>${c.t}</label></div>`).join('');
+        const careHtml = HD_CARE.map((c,i)=>`<div class="opt"><input type="checkbox" id="hd_care_${i}"><label>${c}</label></div>`).join('');
+        card.innerHTML += `<div class="hint" style="margin-top:8px; font-weight:600;">Concerns (tick only if they happened):</div>${cHtml}
+          <div class="hint" style="margin-top:8px; font-weight:600;">Care provided (optional - tick only what was done):</div>${careHtml}
+          <input type="text" id="hd_care_other" placeholder="other care (optional)" style="margin-top:6px;">`;
+      }
+      if(t.dementiaCare){
+        const reasonHtml = DEMENTIA_REASONS.map((r,i)=>`<div class="opt"><input type="checkbox" id="dc_reason_${i}"><label>${r}</label></div>`).join('');
+        const careHtml = DEMENTIA_CARE.map((c,i)=>`<div class="opt"><input type="checkbox" id="dc_care_${i}"><label>${c}</label></div>`).join('');
+        card.innerHTML += `<div class="hint" style="margin-top:8px; font-weight:600;">Reason for enhanced care (tick all that apply):</div>${reasonHtml}
+          <div class="hint" style="margin-top:8px; font-weight:600;">Care provided (optional - tick only what was done):</div>${careHtml}
+          <input type="text" id="dc_care_other" placeholder="other care/observation (optional)" style="margin-top:6px;">`;
       }
       if(t.bmChart){ card.innerHTML += bmChartBlockHtml(); }
       if(t.bloodTests){
