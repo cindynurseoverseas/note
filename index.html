@@ -850,6 +850,12 @@
 
 <div class="step" data-step="9" id="step9">
 <div class="genbar">
+    <label style="font-size:0.85rem; font-weight:600; margin-right:6px;">Note layout:
+      <select id="noteLayout" onchange="generateNote()" style="margin-left:4px;">
+        <option value="combined" selected>Combined (plain paragraphs, no headings)</option>
+        <option value="sectioned">Sectioned (A, B, C, D, E headings)</option>
+      </select>
+    </label>
     <button class="generate" onclick="generateNote()">Generate Note</button>
     <button class="reword" onclick="generateNote()">🎲 Reword (same selections)</button>
     <button class="copy" onclick="copyNote()">Copy to clipboard</button>
@@ -1158,6 +1164,7 @@ const DEVICES_VASCULAR = [
 const DEVICES_FEEDING = [
   {id:'ngtube', label:'NG tube'},
   {id:'jejunostomy', label:'Jejunostomy (feeding tube)'},
+  {id:'peg', label:'PEG (gastrostomy feeding tube)'},
   {id:'tpn', label:'TPN'},
   {id:'stoma', label:'Stoma'},
 ];
@@ -2595,6 +2602,22 @@ const PCA_CONDITIONS = [
   {c:'Inadequate analgesia despite appropriate PCA use', r:'Pain and PCA demand/delivery ratio reassessed, acute pain team contacted, background/bolus settings reviewed.'},
   {c:'Persistent nausea/vomiting despite antiemetics', r:'Antiemetic given/reviewed, acute pain team/anaesthetist informed if ongoing.'},
 ];
+const PEG_CONCERNS = [
+  {t:'Tube blocked \u2014 flushed gently with warm water, surgical SHO and nutrition team informed'},
+  {t:'Tube dislodged or pulled out \u2014 nothing given via PEG, surgical SHO informed urgently'},
+  {t:'Pain or bloating with feeding \u2014 feed stopped, surgical SHO informed'},
+  {t:'Vomiting or reflux with feed \u2014 feed stopped, sat upright, surgical SHO informed'},
+  {t:'Tube cracked or split \u2014 surgical SHO and nutrition team informed'},
+];
+const PEG_CARE = [
+  'tube flushed before and after feed and medication',
+  'sat upright (30-45 degrees) during feeding and for 30-60 minutes after',
+  'site cleaned and dried',
+  'external bumper checked \u2014 sitting close to the skin, not tight',
+  'tube secured to the abdomen',
+  'tube advanced and rotated as per local protocol (established PEG only)',
+  'pain assessed during feeding and flushing',
+];
 const HD_CONCERNS = [
   {t:'Bleeding from the access site \u2014 firm pressure applied, surgical SHO and renal team informed'},
   {t:'Line dislodged or pulled out \u2014 firm pressure applied, help called, surgical SHO and renal team informed'},
@@ -2701,6 +2724,53 @@ const DEVICE_TEMPLATES = {
       let base = `Blood samples taken${time?' at '+time:''}${site?' from '+site:''}${reason?' ('+reason+')':''}: ${tests.length ? tests.join(', ') : '[tests]'}.`;
       if(status) base += ` ${status}.`;
       return base;
+    }
+  },
+  peg: {
+    title:'PEG (gastrostomy feeding tube)',
+    pegCare: true,
+    fields:[
+      {id:'peg_day', label:'Days since insertion', type:'number'},
+      {id:'peg_use', label:'Use of PEG', type:'select', options:['','Not yet cleared for use \u2014 nothing given via PEG until the team confirms','Cleared for use by the surgical/endoscopy team']},
+      {id:'peg_site', label:'Site', type:'select', options:['','Clean, dry and intact','Red or sore around the site','Leaking around the site','Bleeding at the site','Excess granulation tissue at the site']},
+      {id:'peg_length', label:'Tube mark at skin (cm, optional)', type:'text', placeholder:'e.g. 4'},
+      {id:'peg_mode', label:'Feeding', type:'select', options:['','Continuous pump feed','Bolus feed','Not being fed \u2014 flushes and medications only']},
+      {id:'peg_feed', label:'Feed type', type:'select_other', options:['','Nutrison Standard','Nutrison Protein Plus','Nutrison Energy','Peptamen','Vital 1.5']},
+      {id:'peg_rate', label:'Rate (ml/hr, pump feed)', type:'number'},
+      {id:'peg_feedstart', label:'Feed started at', type:'text', placeholder:'e.g. 20:00'},
+    ],
+    build:(f)=>{
+      const lc=(t)=>t.charAt(0).toLowerCase()+t.slice(1);
+      const out=[];
+      out.push(`Patient has a PEG tube in situ${f.peg_day ? ' (day '+f.peg_day+' after insertion)' : ''}.`);
+      if(f.peg_use) out.push(f.peg_use+'.');
+      if(f.peg_site){
+        const siteMap = {
+          'Clean, dry and intact':'PEG site clean, dry and intact.',
+          'Red or sore around the site':'PEG site red or sore \u2014 surgical SHO informed.',
+          'Leaking around the site':'PEG site leaking \u2014 dressing changed, bumper checked, surgical SHO informed.',
+          'Bleeding at the site':'PEG site bleeding \u2014 nothing given via PEG, surgical SHO informed.',
+          'Excess granulation tissue at the site':'Excess granulation tissue at the PEG site \u2014 nutrition team informed.'
+        };
+        out.push(siteMap[f.peg_site] || `PEG site: ${lc(f.peg_site)}.`);
+      }
+      if(f.peg_length) out.push(`Tube mark at skin ${f.peg_length}cm.`);
+      if(f.peg_mode){
+        if(f.peg_mode.startsWith('Not being fed')) out.push('Not being fed via PEG \u2014 flushes and medications only.');
+        else {
+          const feed = f.peg_feed ? ` with ${f.peg_feed}` : '';
+          const rate = (f.peg_mode==='Continuous pump feed' && f.peg_rate) ? ` at ${f.peg_rate}ml/hr` : '';
+          const start = f.peg_feedstart ? `, started at ${f.peg_feedstart}` : '';
+          out.push(`Feeding via PEG: ${lc(f.peg_mode)}${feed}${rate}${start}.`);
+        }
+      }
+      const concerns = PEG_CONCERNS.filter((c,i)=>document.getElementById('peg_concern_'+i)?.checked).map(c=>c.t);
+      if(concerns.length) out.push('Concern: '+concerns.join('; ')+'.');
+      const care = PEG_CARE.filter((c,i)=>document.getElementById('peg_care_'+i)?.checked);
+      const other = getVal('peg_care_other');
+      if(other) care.push(other);
+      if(care.length) out.push('Care: '+care.join('; ')+'.');
+      return out.join(' ');
     }
   },
   hdaccess: {
@@ -3982,6 +4052,13 @@ function renderDeviceSections(){
           </div>
         </div>`;
       }
+      if(t.pegCare){
+        const cHtml = PEG_CONCERNS.map((c,i)=>`<div class="opt"><input type="checkbox" id="peg_concern_${i}"><label>${c.t}</label></div>`).join('');
+        const careHtml = PEG_CARE.map((c,i)=>`<div class="opt"><input type="checkbox" id="peg_care_${i}"><label>${c}</label></div>`).join('');
+        card.innerHTML += `<div class="hint" style="margin-top:8px; font-weight:600;">Concerns (tick only if they happened):</div>${cHtml}
+          <div class="hint" style="margin-top:8px; font-weight:600;">Care provided (optional - tick only what was done):</div>${careHtml}
+          <input type="text" id="peg_care_other" placeholder="other care (optional)" style="margin-top:6px;">`;
+      }
       if(t.hdAccess){
         const cHtml = HD_CONCERNS.map((c,i)=>`<div class="opt"><input type="checkbox" id="hd_concern_${i}"><label>${c.t}</label></div>`).join('');
         const careHtml = HD_CARE.map((c,i)=>`<div class="opt"><input type="checkbox" id="hd_care_${i}"><label>${c}</label></div>`).join('');
@@ -4744,6 +4821,39 @@ function buildNoteText(){
   return lines.join('\n');
 }
 
+const NOTE_LABEL_RE = /^(A|B|C|D|E|Mobility|Diet & Fluids|Urine and bowel|Devices|Blood results|Fluid balance & daily record|Specialty team input|Additional notes):\s*$/;
+function combineNoteLayout(text){
+  const raw = text.split('\n');
+  // find the three blocks: opening, A-E, everything after
+  let firstBlank = raw.indexOf('');
+  if(firstBlank < 0) firstBlank = raw.length;
+  const opening = raw.slice(0, firstBlank);
+  let rest = raw.slice(firstBlank+1);
+  const eIdx = rest.findIndex(l=>l.trim()==='E:');
+  let splitAt = rest.length;
+  if(eIdx >= 0){
+    for(let i=eIdx+1;i<rest.length;i++){
+      if(NOTE_LABEL_RE.test(rest[i].trim())){ splitAt = i; break; }
+    }
+  }
+  const assess = rest.slice(0, splitAt);
+  const after = rest.slice(splitAt);
+  const tidy = (arr)=>{
+    const out = [];
+    arr.forEach(l=>{
+      let t = l.trim();
+      if(!t || NOTE_LABEL_RE.test(t)) return;
+      t = t.replace(/^[-\u2022*]\s+/, '');
+      if(/reflects all readings:$/.test(t)) t = t.replace(/;?\s*combined A-E assessment below reflects all readings:$/, '. The findings below combine all readings.');
+      else if(/A-E assessment[^:]*:$/i.test(t)) t = t.replace(/[,;]?\s*(with )?A-E assessment[^:]*:$/i, '.');
+      if(!/[.!?)\]]$/.test(t)) t += '.';
+      out.push(t);
+    });
+    return out.join(' ');
+  };
+  return [tidy(opening), tidy(assess), tidy(after)].filter(x=>x).join('\n\n');
+}
+
 let lastGeneratedNote = '';
 function generateNote(){
   let noteText;
@@ -4753,7 +4863,8 @@ function generateNote(){
     attempts++;
   } while(noteText === lastGeneratedNote && attempts < 25);
   lastGeneratedNote = noteText;
-  document.getElementById('noteOut').value = noteText;
+  const layout = document.getElementById('noteLayout')?.value || 'combined';
+  document.getElementById('noteOut').value = layout === 'combined' ? combineNoteLayout(noteText) : noteText;
 }
 
 function resetForm(){
